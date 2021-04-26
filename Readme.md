@@ -11,11 +11,14 @@ edit [var] parameters (T_eff (K), exp_time (s), vmag (generic Bessell V)) in cal
 
 This code also has a function to generate  snr_master_hk.fits which is interpolated to match the KPF-ETC grids
 
+Before running, will need to unzip telluric file, check paths
+
 To Do:
 ---------
-Clean up plotting sequences, put into functions
-Incorporate this into the KPF-ETC interpolator
-Calculate errors on S_HK index and add saturation flag
+-Clean up plotting sequences, put into functions
+-Incorporate this into the KPF-ETC interpolator
+-Calculate errors on S_HK index and add saturation flag
+-Adapt this code to be back end of online GUI ETC
 
 
 Notes:
