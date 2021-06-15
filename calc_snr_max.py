@@ -19,7 +19,7 @@ sys.path.append('./utils/')
 from objects import load_object
 from load_inputs import fill_data
 from functions import *
-from kpf_etc.etc import kpf_photon_noise_estimate, kpf_etc_rv, kpf_etc_snr
+#from kpf_etc.etc import kpf_photon_noise_estimate, kpf_etc_rv, kpf_etc_snr
 
 
 from specutils import Spectrum1D
@@ -128,7 +128,7 @@ if __name__=='__main__':
 	# scale spectra
 	vkpf, skpf  = scale_to_kpf(so)
 	vhk, shk    = scale_to_cahk(so)
-	#sigma_rv_val, wvl_arr, snr_ord, dv_ord = kpf_photon_noise_estimate(so.var.teff, so.var.vmag, so.var.exp_time)
+	# #sigma_rv_val, wvl_arr, snr_ord, dv_ord = kpf_photon_noise_estimate(so.var.teff, so.var.vmag, so.var.exp_time)
 
 	plt.figure()
 	plt.plot(vkpf,skpf,'g',label='KPF')
@@ -138,6 +138,7 @@ if __name__=='__main__':
 	plt.ylabel('SNR')
 	plt.legend()
 	plt.title('$t_{exp}$=%s  Teff=%s  vmag=%s'%(so.var.exp_time,so.var.teff,so.var.vmag))
+	plt.savefig('fig1.png')
 
 	# Make grids **to do: download phoenix files
 	#make_hk_grids(so)
@@ -159,6 +160,8 @@ if __name__=='__main__':
 	plt.ylabel('SNR')
 	plt.legend()
 	plt.title('$t_{exp}$=%s  Teff=%s  vmag=%s'%(so.var.exp_time,so.var.teff,so.var.vmag))
+	plt.savefig('fig2.png')
+
 
 	# plot pixel version
 	plt.figure()
@@ -170,6 +173,8 @@ if __name__=='__main__':
 	plt.ylabel('Photons per pixel')
 	plt.legend()
 	plt.title('$t_{exp}$=%s  Teff=%s  vmag=%s'%(so.var.exp_time,so.var.teff,so.var.vmag))
+	plt.savefig('fig3.png')
+
 
 
 
