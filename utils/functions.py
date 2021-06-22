@@ -90,12 +90,12 @@ def setup_band(x, x0=0, sig=0.3, eta=1):
     return y
 
 ## This is done? ##
-def gen_filter_profile(wave_grid, lam, width, throughput, mode='tophat', plot=True, savefig=False):
+def gen_filter_profile(wavegrid, lam, width, throughput, mode='tophat', plot=True, savefig=False):
     '''
     Generates a distribution of throughputs as a function of wavelength centered at a specific wavelength
 
     :parameter
-    wave_grid: Array of wavelengths (in nm) that the plot covers
+    wavegrid: Array of wavelengths (in nm) that the plot covers
     lam: The wavelength (in nm) that the distribution is centered around
     width: the FWHM of the distribution
     throughput: Maximum throughput
@@ -107,19 +107,19 @@ def gen_filter_profile(wave_grid, lam, width, throughput, mode='tophat', plot=Tr
     filter_profile - returns the arrafilter_profile of distributed throughput as a function of the wavelength grid
     '''
     if mode == 'tophat':
-        filter_profile = (np.where(abs(wave_grid - lam) <= width / 2, throughput, 0))
+        filter_profile = (np.where(abs(wavegrid - lam) <= width / 2, throughput, 0))
 
     elif mode == 'gaussian': # 2.355 factor converts FWHM to stdev
-        filter_profile = np.exp(-.5 * ((wave_grid - lam) / (width / 2.355)) ** 2) / (
+        filter_profile = np.exp(-.5 * ((wavegrid - lam) / (width / 2.355)) ** 2) / (
                 (width / 2.355) * np.sqrt(2 * np.pi))
         filter_profile = filter_profile / max(filter_profile) * throughput
 
     if plot:
-        plt.plot(wave_grid, filter_profile)
+        plt.plot(wavegrid, filter_profile)
         plt.ylim(0, 1)
         plt.ylabel('throughput')
         plt.xlabel('wavelength/nm')
-        plt.xticks(np.arange(min(wave_grid), max(wave_grid) + 1, 1.0))
+        plt.xticks(np.arange(min(wavegrid), max(wavegrid) + 1, 1.0))
         plt.yticks(np.arange(min(filter_profile), max(filter_profile) + 0.1, 0.1))
         plt.axvline(lam)
         if savefig:
