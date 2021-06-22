@@ -178,5 +178,6 @@ class fill_data():
         '''
         loads the hirax file
         '''
-        hirax_file = np.loadtxt('F:/Research/Summer-2021_HK-snr/data/hirax/hirax_bandpass.txt')
+        hirax_file = np.loadtxt('./data/hirax/hirax_bandpass.txt')
         lam, width, throughput = hirax_file.T
+        so.hirax.wavetime, so.hirax.hfp = self.x, gen_filter_profile(self.x, lam, width, throughput, savefig=True)
