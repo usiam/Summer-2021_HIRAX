@@ -11,7 +11,7 @@ edit [var] parameters (T_eff (K), exp_time (s), vmag (generic Bessell V)) in cal
 
 This code also has a function to generate  snr_master_hk.fits which is interpolated to match the KPF-ETC grids
 
-Before running, will need to unzip telluric file, check paths
+Before running, will need to unzip telluric file, check paths.
 
 To Do:
 ---------
