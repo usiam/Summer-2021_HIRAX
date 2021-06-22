@@ -3,44 +3,49 @@
 ###############################################################
 
 import numpy as np
+import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 from scipy.integrate import trapz
 from scipy import signal
 
-all = {'integrate','gaussian', 'define_lsf', 'vac_to_stand', 'setup_band', 'resample'}
+all = {'integrate', 'gaussian', 'define_lsf', 'vac_to_stand', 'setup_band', 'resample'}
 
 
-def integrate(x,y):
+def integrate(x, y):
     """
     Integrate y wrt x
     """
-    return trapz(y,x=x)
+    return trapz(y, x=x)
+
 
 def gaussian(x, shift, sig):
     ' Return normalized gaussian with mean shift and var = sig^2 '
-    return np.exp(-.5*((x - shift)/sig)**2)/(sig * np.sqrt(2*np.pi))
+    return np.exp(-.5 * ((x - shift) / sig) ** 2) / (sig * np.sqrt(2 * np.pi))
 
 
-def define_lsf(v,res):
+def define_lsf(v, res):
     """
     define gaussian in pixel elements to convolve resolved spectrum with to get rightish resolution
     """
-    dlam  = np.median(v)/res
-    fwhm  = dlam/np.mean(np.diff(v)) # desired lambda spacing over current lambda spacing resolved to give sigma in array elements
-    sigma = fwhm/2.634 # FWHM is dl/l but feed sigma    
-    x = np.arange(sigma*10)
-    gaussian = (1./sigma/np.sqrt(2*np.pi)) * np.exp(-0.5*( (x - 0.5*len(x))/sigma)**2 )
+    dlam = np.median(v) / res
+    fwhm = dlam / np.mean(
+        np.diff(v))  # desired lambda spacing over current lambda spacing resolved to give sigma in array elements
+    sigma = fwhm / 2.634  # FWHM is dl/l but feed sigma
+    x = np.arange(sigma * 10)
+    gaussian = (1. / sigma / np.sqrt(2 * np.pi)) * np.exp(-0.5 * ((x - 0.5 * len(x)) / sigma) ** 2)
 
     return gaussian
 
-def degrade_spec(x,y,res):
+
+def degrade_spec(x, y, res):
     """
     given wavelength, flux array, and resolving power R, return  spectrum at that R
     """
-    lsf      = define_lsf(x,res=res)
-    y_lowres = np.convolve(y,lsf,mode='same')
+    lsf = define_lsf(x, res=res)
+    y_lowres = np.convolve(y, lsf, mode='same')
 
     return y_lowres
+
 
 def vac_to_stand(wave_vac):
     """Convert vacuum wavelength (Ang) to standard wavelength in air since we're
@@ -59,12 +64,12 @@ def vac_to_stand(wave_vac):
     
     """
     # eqn
-    sigma2= (1e4/wave_vac)**2.
-    fact = 1. +  5.792105e-2/(238.0185 - sigma2) + \
-                            1.67917e-3/( 57.362 - sigma2)
-                            
+    sigma2 = (1e4 / wave_vac) ** 2.
+    fact = 1. + 5.792105e-2 / (238.0185 - sigma2) + \
+           1.67917e-3 / (57.362 - sigma2)
+
     # return l0 / n which equals lamda
-    return wave_vac/fact
+    return wave_vac / fact
 
 
 def setup_band(x, x0=0, sig=0.3, eta=1):
@@ -79,14 +84,51 @@ def setup_band(x, x0=0, sig=0.3, eta=1):
     """
     y = np.zeros_like(x)
 
-    ifill = np.where((x > x0-sig/2) & (x < x0 + sig/2))[0]
+    ifill = np.where((x > x0 - sig / 2) & (x < x0 + sig / 2))[0]
     y[ifill] = eta
 
     return y
 
+## This is done? ##
+def gen_filter_profile(wave_grid, lam, width, throughput, mode='tophat', plot=True, savefig=False):
+    '''
+    Generates a distribution of throughputs as a function of wavelength centered at a specific wavelength
 
+    :parameter
+    wave_grid: Array of wavelengths (in nm) that the plot covers
+    lam: The wavelength (in nm) that the distribution is centered around
+    width: the FWHM of the distribution
+    throughput: Maximum throughput
+    modes: tophat, gaussian
+    plot: whether a plot should be created or not
+    savefig: whether the figure should be saved or not
 
-def resample(x,y,sig=0.3, dx=0, eta=1,mode='slow'):
+    :returns
+    filter_profile - returns the arrafilter_profile of distributed throughput as a function of the wavelength grid
+    '''
+    if mode == 'tophat':
+        filter_profile = (np.where(abs(wave_grid - lam) <= width / 2, throughput, 0))
+
+    elif mode == 'gaussian': # 2.355 factor converts FWHM to stdev
+        filter_profile = np.exp(-.5 * ((wave_grid - lam) / (width / 2.355)) ** 2) / (
+                (width / 2.355) * np.sqrt(2 * np.pi))
+        filter_profile = filter_profile / max(filter_profile) * throughput
+
+    if plot:
+        plt.plot(wave_grid, filter_profile)
+        plt.ylim(0, 1)
+        plt.ylabel('throughput')
+        plt.xlabel('wavelength/nm')
+        plt.xticks(np.arange(min(wave_grid), max(wave_grid) + 1, 1.0))
+        plt.yticks(np.arange(min(filter_profile), max(filter_profile) + 0.1, 0.1))
+        plt.axvline(lam)
+        if savefig:
+            plt.savefig(f'./figures/{mode}_plot_center{lam}_wid_{width}.png')
+        plt.show()
+
+    return filter_profile
+
+def resample(x, y, sig=0.3, dx=0, eta=1, mode='slow'):
     """
     resample using convolution
 
@@ -103,27 +145,27 @@ def resample(x,y,sig=0.3, dx=0, eta=1,mode='slow'):
     slow method uses trapz so slightly more accurate, i think? both return similar flux values
 
     """
-    if mode=='fast':
-        dlam    = np.median(np.diff(x)) # nm per pixel, most accurate if x is uniformly sampled in wavelength
+    if mode == 'fast':
+        dlam = np.median(np.diff(x))  # nm per pixel, most accurate if x is uniformly sampled in wavelength
         if sig <= dlam: raise ValueError('Sigma value is smaller than the sampling of the provided wavelength array')
-        nsamp   = int(sig / dlam)     # width of tophat
-        tophat  = eta * np.ones(nsamp) # do i need to pad this?
+        nsamp = int(sig / dlam)  # width of tophat
+        tophat = eta * np.ones(nsamp)  # do i need to pad this?
 
-        int_spec_oversample    = dlam * signal.fftconvolve(y,tophat,mode='same') # dlam integrating factor
-        
-        int_lam  = x[int(nsamp/2 + dx/dlam):][::nsamp] # shift over by dx/dlam (npoints) before taking every nsamp point
-        int_spec =  int_spec_oversample[int(nsamp/2 + dx/dlam):][::nsamp]
+        int_spec_oversample = dlam * signal.fftconvolve(y, tophat, mode='same')  # dlam integrating factor
 
-    elif mode=='slow':
-        i=0
-        int_lam, int_spec  = [], []
+        int_lam = x[int(nsamp / 2 + dx / dlam):][
+                  ::nsamp]  # shift over by dx/dlam (npoints) before taking every nsamp point
+        int_spec = int_spec_oversample[int(nsamp / 2 + dx / dlam):][::nsamp]
+
+    elif mode == 'slow':
+        i = 0
+        int_lam, int_spec = [], []
         # step through and integrate each segment
-        while i*sig/2 + dx< np.max(x)-sig/2 - np.min(x): # check
-            xcent    = np.min(x) + dx + i*sig/2
-            tophat   = setup_band(x, x0=xcent, sig=sig, eta=eta) # eta throughput of whole system
-            int_spec.append(integrate(x,tophat * y))
+        while i * sig / 2 + dx < np.max(x) - sig / 2 - np.min(x):  # check
+            xcent = np.min(x) + dx + i * sig / 2
+            tophat = setup_band(x, x0=xcent, sig=sig, eta=eta)  # eta throughput of whole system
+            int_spec.append(integrate(x, tophat * y))
             int_lam.append(xcent)
             i += 1
 
     return int_lam, int_spec
-
