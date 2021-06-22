@@ -147,6 +147,7 @@ class HIRAX():  # does this seem right?
         self.lam = None
         self.width = None
         self.throughput = None
+        self.wavegrid = None
         self.hfp = None # hfp : hirax_filter_profile
 
 
