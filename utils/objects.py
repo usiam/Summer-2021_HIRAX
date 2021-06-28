@@ -44,6 +44,7 @@ class CONSTANT():
         self.snr_kpf = None  # kpf snr
         self.res_hk = None
         self.tel_area = None
+        self.hale_area = None
         # wheres res_hk and tel_area
 
 
@@ -144,10 +145,8 @@ class EXOPLANET():
 class HIRAX():  # does this seem right?
     def __init__(self):
         self.hirax_file = None
-        self.lam = None
-        self.width = None
-        self.throughput = None
         self.wavegrid = None
+        self.center_lam = None
         self.hfp = None # hfp : hirax_filter_profile
 
 
