@@ -110,6 +110,8 @@ class fill_data():
         self.hk(so)
         self.stellar(so)
         self.kpf(so)
+        self.exoplanet(so)
+        self.hirax(so)
         self.telluric(so)
 
     def hk(self, so):
@@ -158,7 +160,8 @@ class fill_data():
         load tapas telluric file
         """
         data = fits.getdata(so.tel.telluric_file)
-        tck_tel = interpolate.splrep(data['Wave/freq'], data['Total'], k=2, s=0) # the documentation says even k should be avoided for small 0
+        tck_tel = interpolate.splrep(data['Wave/freq'], data['Total'], k=2,
+                                     s=0)  # the documentation says even k should be avoided for small 0
         so.tel.v, so.tel.s = self.x, interpolate.splev(self.x, tck_tel, der=0, ext=1)
 
     def exoplanet(self, so):
@@ -166,18 +169,18 @@ class fill_data():
         loads the goyal exoplanet file
         '''
 
-        goyal_file = np.loadtxt('./data/goyal/trans-eqpt_WASP-019_0.25_+1.7_0.75_model.txt')
+        goyal_file = np.loadtxt(so.exo.exoplanet_file)
         v_temp, depth_temp = (goyal_file[~np.isnan(goyal_file).any(axis=1), :]).T
-        tck_exo = interpolate.splrep(v_temp, depth_temp, k=2, s=0)
+        tck_exo = interpolate.splrep(v_temp * 1000, 1 - depth_temp, k=2, s=0)
         so.exo.v, so.exo.depth = self.x, interpolate.splev(self.x, tck_exo, der=0, ext=1)
 
-    # look into website, and paper
-    # look into interpolate and set it up similar to telluric -- DONE??
-
-    def hirax(self, so): # we have to call gen_filter_profile in this function possibly?
+    def hirax(self, so):
         '''
         loads the hirax file
         '''
-        hirax_file = np.loadtxt('./data/hirax/hirax_bandpass.txt')
+        hirax_file = np.loadtxt(so.hirax.hirax_file)
         lam, width, throughput = hirax_file.T
-        so.hirax.wavetime, so.hirax.hfp = self.x, gen_filter_profile(self.x, lam, width, throughput, savefig=True)
+        so.hirax.wavegrid = self.x
+        so.hirax.center_lam = lam
+        so.hirax.hfp = [gen_filter_profile(self.x, l, w, t, mode='gaussian') for l, w, t in
+                        zip(lam, width, throughput)]
