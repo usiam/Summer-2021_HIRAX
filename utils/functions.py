@@ -8,6 +8,8 @@ from scipy.interpolate import interp1d
 from scipy.integrate import trapz
 from scipy import signal
 
+from utils.objects import storage_object
+
 all = {'integrate', 'gaussian', 'define_lsf', 'vac_to_stand', 'setup_band', 'resample'}
 
 
@@ -89,8 +91,8 @@ def setup_band(x, x0=0, sig=0.3, eta=1):
 
     return y
 
-## This is done? ##
-def gen_filter_profile(wavegrid, lam, width, throughput, mode='tophat', plot=True, savefig=False):
+
+def gen_filter_profile(wavegrid, lam, width, throughput, mode='tophat', plot=False, savefig=False):
     '''
     Generates a distribution of throughputs as a function of wavelength centered at a specific wavelength
 
@@ -109,7 +111,7 @@ def gen_filter_profile(wavegrid, lam, width, throughput, mode='tophat', plot=Tru
     if mode == 'tophat':
         filter_profile = (np.where(abs(wavegrid - lam) <= width / 2, throughput, 0))
 
-    elif mode == 'gaussian': # 2.355 factor converts FWHM to stdev
+    elif mode == 'gaussian':  # 2.355 factor converts FWHM to stdev
         filter_profile = np.exp(-.5 * ((wavegrid - lam) / (width / 2.355)) ** 2) / (
                 (width / 2.355) * np.sqrt(2 * np.pi))
         filter_profile = filter_profile / max(filter_profile) * throughput
@@ -127,6 +129,25 @@ def gen_filter_profile(wavegrid, lam, width, throughput, mode='tophat', plot=Tru
         plt.show()
 
     return filter_profile
+
+
+def calc_flux(so: storage_object, exoplanet=True) -> list:  # look for functions faster than trapz
+    '''
+    :parameter
+    so: storage_object - storage_object class that stores all the data
+    exoplanet: boolean - True if exoplanet spectra is being used, False otherwise
+    :returns
+    flux : the result of the integration
+    '''
+
+    x = so.stel.v  # all the values are interpolated so they all have the same x axis
+    area, exposure_time = so.const.hale_area, 1
+    if exoplanet == False:
+        so.exo.depth = [1] * len(x)
+    flux = np.array([np.trapz((so.stel.s * so.exo.depth * so.tel.s * profile), x) * area * exposure_time for profile in
+                     so.hirax.hfp])
+    return flux
+
 
 def resample(x, y, sig=0.3, dx=0, eta=1, mode='slow'):
     """
