@@ -38,11 +38,14 @@ if __name__ == '__main__':
    
     plt.plot(so.hirax.center_lam, flux, '.', label="With exoplanet")
     plt.plot(so.hirax.center_lam, no_exo_flux, '.', label="No exoplanet")
-    plt.savefig('./figures/no_exoplanet_plot.png')
     plt.xlabel("Center wavelengths, nm")
     plt.ylabel("Flux/sec")
     plt.title("Flux/sec vs Center wavelengths with exoplanet and without exoplanet")
     plt.legend()
+    plt.savefig('./figures/no_exoplanet_plot.png')
+
+    diff = no_exo_flux - flux
+    print(diff)
 
     # fig, axs = plt.subplots(2, 2, sharex=True)
     # axs[0][0].plot(so.tel.v, so.tel.s, color='blue')
