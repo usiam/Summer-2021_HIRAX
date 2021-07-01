@@ -106,21 +106,14 @@ class fill_data():
 
     def __init__(self, so):
         # define
-        self.x = np.arange(so.const.l0, so.const.l1, 0.00005)
-        self.hk(so)
+        so.xgrid = np.arange(so.const.l0, so.const.l1, 0.00005)
+        self.x = so.xgrid
         self.stellar(so)
-        self.kpf(so)
         self.exoplanet(so)
         self.hirax(so)
         self.telluric(so)
-
-    def hk(self, so):
-        ###########
-        # load hk transmission
-        xtemp, ytemp = np.loadtxt(so.hk.transmission_file).T
-        f = interp1d(xtemp, ytemp, kind='linear', bounds_error=False, fill_value=0)
-
-        so.hk.xtransmit, so.hk.ytransmit = self.x, f(self.x)
+        # self.hk(so)
+        # self.kpf(so)
 
     def stellar(self, so):
         """
@@ -145,16 +138,6 @@ class fill_data():
         so.stel.v = self.x
         so.stel.units = 'photons/s/m2/nm'  # stellar spec is in photons/s/m2/nm
 
-    def kpf(self, so):
-        """
-        load kpf things
-        """
-        # kpf transmission
-        xtemp, ytemp = np.loadtxt(so.kpf.transmission_file, delimiter=',').T
-        f = interp1d(xtemp, ytemp, kind='linear', bounds_error=False, fill_value=0)
-
-        so.kpf.xtransmit, so.kpf.ytransmit = self.x, f(self.x)
-
     def telluric(self, so):
         """
         load tapas telluric file
@@ -174,7 +157,7 @@ class fill_data():
         tck_exo = interpolate.splrep(v_temp * 1000, 1 - depth_temp, k=2, s=0)
         so.exo.v, so.exo.depth = self.x, interpolate.splev(self.x, tck_exo, der=0, ext=1)
 
-    def hirax(self, so):
+    def hirax(self, so): # do you want me to modify this function a bit? I could do something like
         '''
         loads the hirax file
         '''

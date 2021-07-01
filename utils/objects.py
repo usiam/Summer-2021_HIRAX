@@ -12,6 +12,7 @@ class storage_object():
 
     def __init__(self):
         # Classes
+        self.xgrid = None
         self.run = RUN()
         self.const = CONSTANT()
         self.var = VARIABLE()
@@ -19,8 +20,6 @@ class storage_object():
         self.stel = STELLAR()
         self.tel = TELLURIC()
         self.out = OUTPUT()
-        self.hk = HK()
-        self.kpf = KPF()
         self.hirax = HIRAX()
         self.exo = EXOPLANET()
         # non class things
@@ -98,43 +97,6 @@ class OUTPUT():
         self.spectrum = None  # ca H&k spectrum
 
 
-class HK():
-    "HK data"
-
-    def __init__(self):
-        self.transmission_file = None
-
-
-class KPF():
-    "KPF data"
-
-    def __init__(self):
-        """
-        KPF data
-        """
-        self.transmission_file = None
-        self.res = None
-        # defined here only
-        self.order_wavelengths = np.array([448.10241617, 451.39728688, 454.74097048, 458.13455982,
-                                           461.57918057, 465.07599254, 468.62619096, 472.23100781,
-                                           475.8917133, 479.60961731, 483.38607099, 487.22246838,
-                                           491.12024812, 495.08089528, 499.10594321, 503.19697554,
-                                           507.35562823, 511.58359179, 515.88261357, 520.25450013,
-                                           524.70111979, 529.2244053, 533.82635666, 538.50904399,
-                                           543.27461076, 548.12527692, 553.06334248, 558.09119105,
-                                           563.21129372, 568.4262131, 573.73860762, 579.15123599,
-                                           584.66696205, 590.28875976, 596.0197186, 601.86304917,
-                                           607.82208926, 613.90031015, 620.10132339, 626.42888791,
-                                           632.88691768, 639.47948974, 646.21085279, 653.08543633,
-                                           660.10786038, 667.28294582, 674.61572544, 682.11145573,
-                                           689.77562939, 697.61398881, 705.63254041, 713.83756995,
-                                           722.235659, 730.83370256, 739.6389279, 748.65891482,
-                                           757.90161747, 767.37538769, 777.08900019, 787.05167968,
-                                           797.27313007, 807.76356599, 818.53374687, 829.59501372,
-                                           840.95932898, 852.63931966, 864.64832416])
-        self.order_fsrs = np.array([])
-
-
 class EXOPLANET():
     def __init__(self):
         self.exoplanet_file = None
@@ -147,7 +109,7 @@ class HIRAX():  # does this seem right?
         self.hirax_file = None
         self.wavegrid = None
         self.center_lam = None
-        self.hfp = None # hfp : hirax_filter_profile
+        self.hfp = None  # hfp : hirax_filter_profile
 
 
 def LoadConfig(configfile, config={}):
