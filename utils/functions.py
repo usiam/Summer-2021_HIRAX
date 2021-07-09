@@ -1,6 +1,6 @@
 ##############################################################
 # General functions for calc_snr_max
-###############################################################
+##############################################################
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -131,8 +131,14 @@ def gen_filter_profile(wavegrid, lam, width, throughput, mode='tophat', plot=Fal
     return filter_profile
 
 
-def calc_flux(so: storage_object, exoplanet=True) -> list:  # look for functions faster than trapz
+def calc_flux(so: storage_object, exoplanet=True, exo_speed=0,
+              stel_speed=0) -> list:
     '''
+    This function applies the relevant doppler shifts to the relevant spectra (so due to motion of exoplanet
+    there is a shift in the exoplanet spectra), re-interpolates the shifted spectra back into the original wave-grid
+    and then calculates the total flux that is received on the earth by a telescope of a given area given a certain
+    exposure time.
+    Note: This function works for one speed. To use it for an array of speeds, enclose the function call in a loop.
     :parameter
     so: storage_object - storage_object class that stores all the data
     exoplanet: boolean - True if exoplanet spectra is being used, False otherwise
@@ -140,41 +146,33 @@ def calc_flux(so: storage_object, exoplanet=True) -> list:  # look for functions
     flux : the result of the integration
     flux_err: the photon noise for each flux calculated using sqrt(flux)
     '''
-
-    x = so.xgrid  # all the values are interpolated so they all have the same x axis
-    area, exposure_time = so.const.hale_area, 2*3600
-    if exoplanet == False:
-        depth = [1] * len(x)
-    else:
-        depth = so.exo.depth
-    flux = np.array([np.trapz((so.stel.s * depth * so.tel.s * profile), x) * area * exposure_time for profile in
-                     so.hirax.hfp])
-    flux_err = np.sqrt(flux)
-    return flux, flux_err
-
-def calc_flux_exo_doppler(so: storage_object, exoplanet=True) -> list:
-    ''':returns
-    PUT DOCSTRING HERE
-    '''
     area, exposure_time = so.const.hale_area, 2 * 3600  # 2 hour transit period
-    speed_arr = np.arange(-100, 150, 50) * 10 ** 3  # [-100, -50, 0, 50, 100]
-    doppler_flux, doppler_flux_err = [], []
     original_xgrid = so.xgrid
-    for speed in speed_arr:
-        shift = np.array(speed * original_xgrid / constants.c)
-        shifted_xgrid = np.array(original_xgrid + shift)  # new wavelength grid that is shifted due to doppler effect
-        if exoplanet == False:
-            depth = [1] * len(original_xgrid)
-        else:
-            tck_exo = interpolate.splrep(shifted_xgrid, so.exo.depth, k=2, s=0)
-            depth = interpolate.splev(original_xgrid, tck_exo, der=0, ext=1)
-        flux_arr = np.array(
-            [np.trapz((so.stel.s * depth * so.tel.s * profile), original_xgrid) * area * exposure_time for profile in
-             so.hirax.hfp])
-        flux_err_arr = np.array([np.sqrt(flux) for flux in flux_arr])
-        doppler_flux.append(flux_arr)
-        doppler_flux_err.append(flux_err_arr)
-    return doppler_flux, doppler_flux_err
+
+    # accounts for stellar proper motion
+    shift_stel = np.array(stel_speed * original_xgrid / constants.c)
+    shifted_xgrid_stel = np.array(original_xgrid + shift_stel)
+    tck_stel = interpolate.splrep(shifted_xgrid_stel, so.stel.s, k=2, s=0)
+    stel_spec = interpolate.splev(original_xgrid, tck_stel, der=0, ext=1)
+
+    # accounts for exoplanet motion
+    shift_exo = np.array(exo_speed * original_xgrid / constants.c)
+    shifted_xgrid_exo = np.array(
+        original_xgrid + shift_exo)  # new wavelength grid that is shifted due to doppler effect
+    if exoplanet == False:
+        depth = [1] * len(original_xgrid)
+    else:
+        tck_exo = interpolate.splrep(shifted_xgrid_exo, so.exo.depth, k=2, s=0)
+        depth = interpolate.splev(original_xgrid, tck_exo, der=0, ext=1)
+
+    # integrates to give flux
+    flux_arr = np.array(
+        [np.trapz((stel_spec * depth * so.tel.s * profile), original_xgrid) * area * exposure_time for profile in
+         so.hirax.hfp])
+
+    # flux_err (photon noise) calculations
+    flux_err_arr = np.array([np.sqrt(flux) for flux in flux_arr])
+    return flux_arr, flux_err_arr
 
 def resample(x, y, sig=0.3, dx=0, eta=1, mode='slow'):
     """

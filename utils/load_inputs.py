@@ -112,8 +112,7 @@ class fill_data():
         self.exoplanet(so)
         self.hirax(so)
         self.telluric(so)
-        # self.hk(so)
-        # self.kpf(so)
+        self.oh(so)
 
     def stellar(self, so):
         """
@@ -136,6 +135,7 @@ class fill_data():
         tck_stel = interpolate.splrep(so.stel.vraw, so.stel.sraw, k=2, s=0)
         so.stel.s = so.stel.factor_0 * interpolate.splev(self.x, tck_stel, der=0, ext=1)
         so.stel.v = self.x
+        so.stel.speed = so.var.stel_speed * 10 ** 3
         so.stel.units = 'photons/s/m2/nm'  # stellar spec is in photons/s/m2/nm
 
     def telluric(self, so):
@@ -156,6 +156,7 @@ class fill_data():
         v_temp, depth_temp = (goyal_file[~np.isnan(goyal_file).any(axis=1), :]).T
         tck_exo = interpolate.splrep(v_temp * 1000, 1 - depth_temp, k=2, s=0)
         so.exo.v, so.exo.depth = self.x, interpolate.splev(self.x, tck_exo, der=0, ext=1)
+        so.exo.speed = np.arange(so.var.min_exo_speed, so.var.max_exo_speed, 50) * 10 ** 3
 
     def hirax(self, so): # do you want me to modify this function a bit? I could do something like
         '''
@@ -164,6 +165,20 @@ class fill_data():
         hirax_file = np.loadtxt(so.hirax.hirax_file)
         lam, width, throughput = hirax_file.T
         so.hirax.wavegrid = self.x
+        so.hirax.throughput = throughput
         so.hirax.center_lam = lam
-        so.hirax.hfp = [gen_filter_profile(self.x, l, w, t, mode='gaussian') for l, w, t in
+        so.hirax.hfp = [gen_filter_profile(self.x, l, w, t) for l, w, t in
                         zip(lam, width, throughput)]
+
+    def oh(self, so):
+        '''
+        loads the oh file
+        '''
+        oh_file = np.loadtxt(so.oh.oh_file)
+        vraw, sraw = (1*10**7)/(oh_file.T[0])[::-1], ((oh_file.T[1])[::-1])
+        tck_oh = interpolate.splrep(vraw, sraw, k=2, s=0)
+        so.oh.v, so.oh.s = self.x, interpolate.splev(self.x, tck_oh, der=0, ext=1)
+
+
+
+
