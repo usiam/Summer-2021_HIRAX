@@ -1,9 +1,8 @@
 */.DS_Store
 data/KPF_1000000rays_orders103-138_-_cal_111.11W_lfc_-_sci_500.00W_lfc_-_sky_500.00W_lfc_-_normalized_145_Green.FITS
-data/telluric/psg_out_2015.06.17_l0_380nm_l1_900nm_res_0.002nm_lon_204.53_lat_19.82_pres_0.5826.fits
 data/sams_comp_spec.png
-__pycache__/
-data/goyal        
+data/goyal/
+__pycache__/    
 code questions.txt
 configSyntax.txt
 test.py
@@ -11,3 +10,4 @@ test.py
 /.vs
 /.idea
 /misc
+data/telluric/psg_out_2015.06.17_l0_380nm_l1_900nm_res_0.002nm_lon_204.53_lat_19.82_pres_0.5826.fits

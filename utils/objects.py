@@ -22,6 +22,7 @@ class storage_object():
         self.out = OUTPUT()
         self.hirax = HIRAX()
         self.exo = EXOPLANET()
+        self.oh = OH()
         # non class things
         self.info = "see objects.py in utils/ for info"
 
@@ -54,6 +55,9 @@ class VARIABLE():
         self.vmag = None  # v band magntidue
         self.teff = None  # K, 100K steps
         self.t_exp = None  # seconds
+        self.min_exo_speed = None
+        self.max_exo_speed = None
+        self.stel_speed = None
 
 
 class FILTER():
@@ -72,6 +76,7 @@ class STELLAR():
         # User optional define:
         self.phoenix_file = None  # stellar spec file name, **make this take temp value in future
         # Filled in by code:
+        self.speed = None
         self.vraw = None  # wavelength like normal (should match exoplanet and be in standard wavelength)
         self.sraw = None  # spectrum
 
@@ -98,19 +103,30 @@ class OUTPUT():
 
 
 class EXOPLANET():
+    "exoplanet transmission file, static"
     def __init__(self):
         self.exoplanet_file = None
         self.v = None  # wavelength
         self.depth = None  # transit depth
+        self.speed = None
 
 
-class HIRAX():  # does this seem right?
+class HIRAX():
+    "Hirax filter profile file, static"
     def __init__(self):
         self.hirax_file = None
         self.wavegrid = None
         self.center_lam = None
+        self.throughput = None
         self.hfp = None  # hfp : hirax_filter_profile
 
+
+class OH():
+    "OH transmission file, static"
+    def __init__(self):
+        self.oh_file = None
+        self.v = None
+        self.s = None
 
 def LoadConfig(configfile, config={}):
     """
