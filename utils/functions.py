@@ -105,8 +105,7 @@ def gen_filter_profile(wavegrid, lam, width, throughput, mode='tophat', plot=Fal
     plot: whether a plot should be created or not
     savefig: whether the figure should be saved or not
 
-    :returns
-    filter_profile - returns the arrafilter_profile of distributed throughput as a function of the wavelength grid
+    :returns filter_profile which is the hirax profile dependent on the width, center, and throughput
     '''
     if mode == 'tophat':
         filter_profile = (np.where(abs(wavegrid - lam) <= width / 2, throughput, 0))
@@ -130,6 +129,22 @@ def gen_filter_profile(wavegrid, lam, width, throughput, mode='tophat', plot=Fal
 
     return filter_profile
 
+def shift_spectra(so: storage_object, xgrid, speed = 0, choice='exoplanet') -> list:
+    '''
+    Shifts the exoplanet raw spectrum due to the doppler effect that is a result of the exoplanet's motion
+    :param so: storage object that stores all the variables
+    :param exo_speed: the speed of the exoplanet that determines the shift
+    :return: depth - the shifted exoplanet spectrum
+    '''
+    original_xgrid = xgrid
+    shift_spectra = np.array(speed * original_xgrid / constants.c)
+    shifted_xgrid = np.array(original_xgrid + shift_spectra)  # new wavelength grid that is shifted due to doppler effect
+    if choice == 'exoplanet':
+        tck_spec = interpolate.splrep(shifted_xgrid, so.exo.depth, k=2, s=0)
+    elif choice == 'stellar':
+        tck_spec = interpolate.splrep(shifted_xgrid, so.stel.s, k=2, s=0)
+    shifted_interpolated_spectra = interpolate.splev(original_xgrid, tck_spec, der=0, ext=1)
+    return shifted_interpolated_spectra
 
 def calc_flux(so: storage_object, exoplanet=True, exo_speed=0,
               stel_speed=0) -> list:
@@ -146,33 +161,53 @@ def calc_flux(so: storage_object, exoplanet=True, exo_speed=0,
     flux : the result of the integration
     flux_err: the photon noise for each flux calculated using sqrt(flux)
     '''
-    area, exposure_time = so.const.hale_area, 2 * 3600  # 2 hour transit period
+    area, exposure_time = so.const.hale_area, so.var.transit_duration  # 2 hour transit period
     original_xgrid = so.xgrid
 
     # accounts for stellar proper motion
-    shift_stel = np.array(stel_speed * original_xgrid / constants.c)
-    shifted_xgrid_stel = np.array(original_xgrid + shift_stel)
-    tck_stel = interpolate.splrep(shifted_xgrid_stel, so.stel.s, k=2, s=0)
-    stel_spec = interpolate.splev(original_xgrid, tck_stel, der=0, ext=1)
+    stel_spec = shift_spectra(so, xgrid=original_xgrid, speed=stel_speed, choice = 'stellar')
 
     # accounts for exoplanet motion
-    shift_exo = np.array(exo_speed * original_xgrid / constants.c)
-    shifted_xgrid_exo = np.array(
-        original_xgrid + shift_exo)  # new wavelength grid that is shifted due to doppler effect
     if exoplanet == False:
         depth = [1] * len(original_xgrid)
     else:
-        tck_exo = interpolate.splrep(shifted_xgrid_exo, so.exo.depth, k=2, s=0)
-        depth = interpolate.splev(original_xgrid, tck_exo, der=0, ext=1)
+        depth = shift_spectra(so, xgrid= original_xgrid, speed=exo_speed, choice='exoplanet')
 
     # integrates to give flux
     flux_arr = np.array(
         [np.trapz((stel_spec * depth * so.tel.s * profile), original_xgrid) * area * exposure_time for profile in
          so.hirax.hfp])
 
-    # flux_err (photon noise) calculations
-    flux_err_arr = np.array([np.sqrt(flux) for flux in flux_arr])
+    flux_err_arr = calc_noise(so, fluxes=flux_arr)
     return flux_arr, flux_err_arr
+
+def calc_noise(so: storage_object, fluxes):
+    '''
+    :param so: storage_object - storage_object class that stores all the data
+    :param fluxes: Array of flux to calculate the photon noise
+
+    :returns the noise in the detection
+    '''
+    w_prime = (so.const.theta_s * so.const.focal_length * so.var.magnification) / 206265
+    psf = w_prime / (so.const.pixel_size * 10**-6)
+    n_pix = np.pi * psf ** 2 #calculate tel_rad and keep a note of it (change 10 to so.const.psf)
+
+    read_noise = so.var.read_n
+    dark_noise = np.sqrt(so.var.dark_n * so.var.transit_duration * n_pix)
+    noise = np.array([np.sqrt((np.sqrt(flux))**2 + (flux * n_pix /(so.var.saturation * n_pix)) * (read_noise)**2 + dark_noise**2) for flux in fluxes])
+
+    return noise
+
+def calc_flux_ratio(so: storage_object):
+    '''
+    :param so: storage object of all data
+    :return: the ratio of the flux during transit and otherwise alongside the error
+    '''
+    flux, flux_err = calc_flux(so, exoplanet=True)
+    no_exo_flux, no_exo_flux_err = calc_flux(so, exoplanet=False)
+    ratio = flux / no_exo_flux
+    error_in_ratio = ratio * np.sqrt((flux_err / flux) ** 2 + (no_exo_flux_err / no_exo_flux) ** 2)
+    return ratio, error_in_ratio
 
 def resample(x, y, sig=0.3, dx=0, eta=1, mode='slow'):
     """
@@ -215,3 +250,5 @@ def resample(x, y, sig=0.3, dx=0, eta=1, mode='slow'):
             i += 1
 
     return int_lam, int_spec
+
+
