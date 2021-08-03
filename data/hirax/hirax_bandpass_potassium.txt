@@ -1,0 +1,7 @@
+# center width height
+# nm nm transmission
+763.5 0.3 1
+765.0 0.3 1
+766.54 0.3 1
+768.4 0.3 1
+775 0.3 1
