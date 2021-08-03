@@ -45,6 +45,10 @@ class CONSTANT():
         self.res_hk = None
         self.tel_area = None
         self.hale_area = None
+        self.focal_length = None # in meter
+        self.pixel_size = None # in micrometer
+        self.theta_s = None # in arcsec
+        self.psf = None
         # wheres res_hk and tel_area
 
 
@@ -54,11 +58,14 @@ class VARIABLE():
     def __init__(self):
         self.vmag = None  # v band magntidue
         self.teff = None  # K, 100K steps
-        self.t_exp = None  # seconds
-        self.min_exo_speed = None
-        self.max_exo_speed = None
-        self.stel_speed = None
-
+        self.transit_duration = None # in seconds
+        self.min_exo_speed = None # in km/s
+        self.max_exo_speed = None # in km/s
+        self.stel_speed = None # in km/s
+        self.dark_n = None
+        self.read_n = None
+        self.saturation = None
+        self.magnification = None
 
 class FILTER():
     "float values"
@@ -118,6 +125,7 @@ class HIRAX():
         self.wavegrid = None
         self.center_lam = None
         self.throughput = None
+        self.width = None
         self.hfp = None  # hfp : hirax_filter_profile
 
 
