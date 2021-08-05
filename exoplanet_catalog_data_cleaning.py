@@ -1,6 +1,9 @@
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+import matplotlib
+
+matplotlib.style.use('seaborn-pastel')
 
 
 def make_one_catalog(d_eu, d_arxv):
@@ -115,9 +118,10 @@ if __name__=='__main__':
     fig, ax = plt.subplots()
     ax.semilogx(signal * 100, vmag, '+k')
     ax.set_ylim((15, 7))
-    ax.set_xlim(0.01, 1)
+    ax.set_xlim(0.01, 0.1)
     ax.set_xlabel('Transit signal of 2 Atmospheric Scale Height (%)')
     ax.set_ylabel('V magnitude')
+    ax.set_xticks([0.01, 0.1], minor=True)
 
     ax2 = ax.twiny()
     path = 'data/output/'
@@ -128,13 +132,14 @@ if __name__=='__main__':
 
     for j,tfac in enumerate(tfactor):
         if j % 2:
-            ax2.semilogx(noise[f"amplitude_err_tfac{j + 1}"], noise['magnitude'], '-k', label=f'tfac = {round(tfac, 3)}', alpha=0.5)
+            ax2.semilogx(noise[f"amplitude_err_tfac{j + 1}"], noise['magnitude'], '-', label=f'tfac = {round(tfac, 3)}', alpha=0.8)
         else:
-            ax2.semilogx(noise[f"amplitude_err_tfac{j + 1}"], noise['magnitude'], '--k', label=f'tfac = {round(tfac, 3)}', alpha=0.5)
+            ax2.semilogx(noise[f"amplitude_err_tfac{j + 1}"], noise['magnitude'], '--', label=f'tfac = {round(tfac, 3)}', alpha=0.8)
 
+    ax2.axis('off')
     ax2.legend()
     fig.suptitle(file.split('_')[2])
-    fig.savefig(f"vmag_signal_percent_{file.split('_')[2]}")
+    # fig.savefig(f"vmag_signal_percent_{file.split('_')[2]}")
 
 
 
