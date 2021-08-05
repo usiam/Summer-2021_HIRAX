@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+from matplotlib import pyplot as plt
+
 
 def make_one_catalog(d_eu, d_arxv):
     """
@@ -80,14 +82,63 @@ def sync_catalogs():
 
     return hj.reset_index()
 
-
-if __name__=='__main__':
+def write_dec_20_data(path):
     d_eu = pd.read_csv('data/exoplanet_catalogs/exoplanet.eu_catalog_hotjupiter_072621.csv', delimiter=',')
     translate_eu(d_eu)
-    x = sync_catalogs()
-    rslt_df = x[x['dec'] > -20]
-    rslt_df = rslt_df.reset_index()
-    rslt_df.to_csv('data/exoplanet_catalogs/exoplanets.csv')
+    cmplt_catalog = sync_catalogs()
+    filtered_df = cmplt_catalog[cmplt_catalog['dec'] > -20]
+    df_tosave = filtered_df.reset_index()
+    df_tosave.to_csv(path)
+
+def calc_absorbtion_signal(data):
+    kb = 1.38064852e-23 #m2 kg s-2 K-1
+    mu = 2.3 * 1.6605390e-27 # kg
+    G = 6.67408e-11 #m3 kg-1 s-2
+
+    # estimate Temp planet in kelvin
+    Teq = (1/4.)**(1/4.) * data['st_teff'] * np.sqrt(0.00465047 * data['st_rad']/data['pl_orbsmax']) # 0.00465047 AU per Rsun
+    gravity = G * data['pl_massj'] * 1.898e27 / (data['pl_radj'] * 69911000.0)**2 #kg from m_jup
+
+    # get H -> kb * T/ mu / g
+    H = kb * Teq / mu / gravity # meters
+
+    # calculate A like Sing did
+    A = 2 * data['pl_radj']*0.10049 * H*1.4374e-9 / data['st_rad']**2
+    return A
+
+if __name__=='__main__':
+
+    exoplanets = pd.read_csv('data/exoplanet_catalogs/exoplanets_dec_over_20.csv')
+    signal = 2 * calc_absorbtion_signal(exoplanets)
+    vmag = exoplanets['sy_vmag']
+
+    fig, ax = plt.subplots()
+    ax.semilogx(signal * 100, vmag, '+k')
+    ax.set_ylim((15, 7))
+    ax.set_xlim(0.01, 1)
+    ax.set_xlabel('Transit signal of 2 Atmospheric Scale Height (%)')
+    ax.set_ylabel('V magnitude')
+
+    ax2 = ax.twiny()
+    path = 'data/output/'
+    file = 'amplitude_vmag_config4'
+    extension = '.txt'
+    noise = pd.read_csv(path + file + extension)
+    tfactor = np.arange(0.2 , 1, 0.2)
+
+    for j,tfac in enumerate(tfactor):
+        if j % 2:
+            ax2.semilogx(noise[f"amplitude_err_tfac{j + 1}"], noise['magnitude'], '-k', label=f'tfac = {round(tfac, 3)}', alpha=0.5)
+        else:
+            ax2.semilogx(noise[f"amplitude_err_tfac{j + 1}"], noise['magnitude'], '--k', label=f'tfac = {round(tfac, 3)}', alpha=0.5)
+
+    ax2.legend()
+    fig.suptitle(file.split('_')[2])
+    fig.savefig(f"vmag_signal_percent_{file.split('_')[2]}")
+
+
+
+
 
 
 
