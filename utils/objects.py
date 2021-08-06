@@ -66,6 +66,7 @@ class VARIABLE():
         self.read_n = None
         self.saturation = None
         self.magnification = None
+        self.num_transits = None
 
 class FILTER():
     "float values"

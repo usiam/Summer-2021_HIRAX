@@ -9,7 +9,11 @@ from utils import functions
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
+import pandas as pd
 
+### Change flux ratio to 1 - Rp/Rs sqaured
+### Put units in ()
+###
 
 class MakePlots():
     def __init__(self, so):
@@ -49,6 +53,20 @@ class MakePlots():
         if savefig:
             fig.savefig('figures/example_spectra.png')
 
+    def plot_hirax_profile(self, savefig=False):
+        fig, ax = plt.subplots()
+        for profile in self.info.hirax.hfp:
+            ax.fill(self.info.hirax.wavegrid, profile, color='black', alpha=0.3)
+        ax.set_ylabel('Throughput')
+        ax.set_xlabel('Wavelength (nm)')
+        ax.set_xlim((min(self.info.hirax.center_lam)-2, max(self.info.hirax.center_lam)+2))
+        ax.set_ylim((0.4, 1.05))
+        ax.spines['right'].set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.set_xticks(ticks=np.arange(min(self.info.hirax.center_lam), max(self.info.hirax.center_lam)+2, 2))
+        if savefig:
+            fig.savefig(f"figures/hirax_profile_{self.info.hirax.hirax_file.split('_')[2].split('.')[0]}.png", dpi=600)
+
     def plot_no_doppler(self, savefig=False):
         '''
         Plots flux vs center wavelengths of the hirax bandpass when exoplanet and stellar speeds are 0 km/s
@@ -62,8 +80,8 @@ class MakePlots():
         fig, ax = plt.subplots()
         ax.errorbar(self.center_wavelengths, ratio, xerr=self.info.hirax.width, yerr=error_in_ratio, fmt='.', color='black')
         ax.plot(self.center_wavelengths, ratio, '-', alpha=0.3, color='blue')
-        ax.set_xlabel("Wavelength, nm")
-        ax.set_ylabel("Flux ratio")
+        ax.set_xlabel("Wavelength (nm)")
+        ax.set_ylabel(r'$1-\left(\frac{R_{p}}{R_{s}}\right)^{2}$')
         ax.set_title(
             f"Ratio of flux with and without exoplanet vs Wavelength\nThroughput:{self.info.hirax.throughput[0]} VMag:{self.info.var.vmag}")
         ax.grid()
@@ -92,8 +110,8 @@ class MakePlots():
             ax.errorbar(self.center_wavelengths, ratio, xerr=self.info.hirax.width, yerr=yerr, fmt='.', color="black", alpha=0.3)
             ax.plot(self.center_wavelengths, ratio, '-', label=f"{label}")
             ax.grid()
-        plt.xlabel("Wavelength, nm")
-        plt.ylabel("Flux ratio")
+        plt.xlabel("Wavelength (nm)")
+        plt.ylabel(r'$1-\left(\frac{R_{p}}{R_{s}}\right)^{2}$')
         plt.title(
             f"Flux Ratio vs Wavelength with effect of doppler shift\nThroughput:{self.info.hirax.throughput[0]} VMag:{self.info.var.vmag}")
         plt.legend()
@@ -124,8 +142,8 @@ class MakePlots():
         for ratio, yerr, label in zip(ratios, error_in_ratio, labels):
             ax.errorbar(self.center_wavelengths, ratio, yerr=yerr, fmt='.', color="black", alpha=0.3)
             ax.plot(self.center_wavelengths, ratio, '-', label=f"{label}")
-        plt.xlabel("Wavelength, nm")
-        plt.ylabel("Flux ratio")
+        plt.xlabel("Wavelength (nm)")
+        plt.ylabel(r'$1-\left(\frac{R_{p}}{R_{s}}\right)^{2}$')
         plt.title(
             f"Ratio of flux with and without exoplanet vs Wavelength\nStellar speed = {stel_speed / 1000} km/s")
         plt.legend()
@@ -163,8 +181,8 @@ class MakePlots():
                 ax[i].legend(bbox_to_anchor=(1.01, 1.0), loc='upper left')
                 ax[i].grid()
         fig.suptitle(f"Flux Ratio vs Wavelength with effect of doppler shift\nThroughput:{self.info.hirax.throughput[0]} VMag:{self.info.var.vmag}")
-        fig.supxlabel('Wavelength, nm')
-        fig.supylabel('Flux ratio')
+        fig.supxlabel('Wavelength (nm)')
+        fig.supylabel(r'$1-\left(\frac{R_{p}}{R_{s}}\right)^{2}$')
         if savefig:
             plt.savefig(
                 f'figures/exo_stel_doppler_ratio_of_fluxes_w_and_wo_exoplanet_errorbar_plot.png',
@@ -194,7 +212,7 @@ class MakePlots():
         labs = [l.get_label() for l in lns]
         ax1.legend(lns, labs, loc=0)
 
-        ax1.set(xlabel="Wavelength, nm", ylabel='Hirax throughput',
+        ax1.set(xlabel="Wavelength (nm)", ylabel='Hirax throughput',
                 title=f"Telluric, Exoplanet, OH lines, and Hirax model\nWavelength: {self.info.hirax.center_lam}"
                       f"\nThroughput:{self.info.hirax.throughput[0]} VMag:{self.info.var.vmag}")
         ax2.set(ylabel=r'$1-\left(\frac{R_{p}}{R_{s}}\right)^{2}$')
@@ -304,7 +322,7 @@ class MakePlots():
             ax.plot(self.info.hirax.center_lam, lorentz_potassium(self.info.hirax.center_lam, *popt), '.')
             ax.set_xlim((750, 780))
 
-        ax.set_xlabel('Wavelength, nm')
+        ax.set_xlabel('Wavelength (nm)')
         ax.set_ylabel('Ratio of flux')
         ax.set_title(f'Fitting the data to an inverse lorentz profile with center and constant fixed'
                      f'\nThroughput:{self.info.hirax.throughput[0]} VMag:{self.info.var.vmag}')
@@ -350,6 +368,13 @@ class MakePlots():
         self.info.var.vmag = default
         if savefig:
             fig.savefig(f"figures/noise_mag_plot.png", dpi=600)
+        np.savetxt(f"data/output/noise_vmag_{self.info.hirax.hirax_file.split('_')[2].split('.')[0]}.txt",
+                   np.transpose([magnitudes, photon_noise, read_noise, dark_noise]), fmt='%1.4e', delimiter=',',
+                   header='magnitude, photon_noise, read_noise, dark_noise')
+
+        # save the noises as a func of vmag in a text file
+        # https://numpy.org/doc/stable/reference/generated/numpy.savetxt.html
+
 
     def plot_SNR_mag_tput(self, magnitudes, amplitudes, tfac = np.arange(0.2 , 1, 0.2), savefig=False):
         '''
@@ -370,3 +395,37 @@ class MakePlots():
         ax.legend(loc='upper right')
         if savefig:
             fig.savefig(f"figures/SNR_mag_tput_plot_{self.info.hirax.hirax_file.split('_')[2].split('.')[0]}", dpi=600)
+
+    def plot_vmag_signal_percent_noise_tfac(vmag_signal_data_file='data/exoplanet_catalogs/exoplanets_dec_over_20_no_nan_signal.csv', config='config1', tfactor=np.arange(0.2 , 1, 0.2), savefig = False):
+            vmag_signal_data = pd.read_csv(vmag_signal_data_file)
+            vmag = vmag_signal_data['sy_vmag']
+            signal_percent = vmag_signal_data['signal_percent']
+            labels = vmag_signal_data['pl_name']
+            path = 'data/output/'
+            file = 'amplitude_vmag_'
+            extension = '.txt'
+            noise = pd.read_csv(path + file + config + extension)
+            fig, ax = plt.subplots(figsize=(12, 10))
+            ax.semilogx(signal_percent, vmag, '+k')
+            ax.set_ylim((16, 7))
+            ax.set_xlim(0.01, 0.1)
+            ax.set_xlabel('Transit signal of 2 Atmospheric Scale Height (%)')
+            ax.set_ylabel('V magnitude')
+            ax.set_xticks([0.01, 0.1], minor=True)
+
+            for i, txt in enumerate(labels):
+                ax.annotate(txt, (signal_percent[i], vmag[i]), fontsize=5)
+
+            ax2 = ax.twiny()
+
+            for j,tfac in enumerate(tfactor):
+                if j % 2:
+                    ax2.semilogx(noise[f"amplitude_err_tfac{j + 1}"], noise['magnitude'], '-', label=f'tfac = {round(tfac, 3)}', alpha=0.8)
+                else:
+                    ax2.semilogx(noise[f"amplitude_err_tfac{j + 1}"], noise['magnitude'], '--', label=f'tfac = {round(tfac, 3)}', alpha=0.8)
+
+            ax2.axis('off')
+            ax2.legend()
+            fig.suptitle(file.split('_')[2])
+            if savefig:
+                fig.savefig(f"figures/vmag_signal_percent_{config}.png", dpi=600)
