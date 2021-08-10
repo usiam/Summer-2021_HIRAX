@@ -5,46 +5,6 @@ import matplotlib
 
 matplotlib.style.use('seaborn-pastel')
 
-
-def make_one_catalog(d_eu, d_arxv):
-    """
-    make translation b/n one header to another
-    for exoplanet archive and exoplanet eu catalogs
-    inputs:
-    d_eu - exoplanet.eu catalog dictionary
-    d_arxv - exoplanet archive download file
-
-    return:
-    dic - pandas dataframe, combined dictionary of inputs with only needed parameters out
-
-    Note:
-    - no RV amplitude or stellar velocity in exoplanet.eu dataset
-    - for description of variables see exoplanet archive csv file header
-    """
-    dic = {}
-
-    # define things we need
-    dtype = np.array(
-        ['|S15', 'float', 'float', 'float', 'float', 'float', 'float', 'float', 'float', 'float', 'float', 'float',
-         'float', 'float'])
-    keys = np.array(['NAME', 'R', 'MSINI', 'A', 'PER', 'K', 'MASS', 'V', 'TEFF', 'MSTAR', 'RSTAR', 'RA', 'DEC', 'RV'])
-
-    k_eu = np.array(
-        ['name', 'radius', 'mass_sini', 'semi_major_axis', 'orbital_period', np.nan, 'mass', 'mag_v', 'star_teff',
-         'star_mass', 'star_radius', 'ra', 'dec', np.nan])
-    k_arxv = np.array(
-        ['pl_name', 'pl_radj', 'pl_massj', 'pl_orbsmax', 'pl_orbper', 'pl_rvamp', 'pl_massj', 'sy_vmag', 'st_teff',
-         'st_mass', 'st_rad', 'ra', 'dec', 'st_radv'])
-
-    for i, key in enumerate(keys):
-        if k_eu[i] == 'nan':
-            dic[key] = np.concatenate((np.nan * np.ones_like(d_eu['name']), d_arxv[k_arxv[i]]))
-        else:
-            dic[key] = np.concatenate((d_eu[k_eu[i]], d_arxv[k_arxv[i]]))
-
-    return pd.DataFrame.from_dict(dic)
-
-
 def translate_eu(d_eu):
     """
     make eu dataset match columns of arxv
@@ -69,14 +29,9 @@ def sync_catalogs():
 
     load both and sync into one dictionary
     """
-    # f1 = 'exoplanet.eu_catalog_hotjupiter_072621.csv'
-    # f2 = 'hotjupiters_northerhemisphere_072621.csv'
-
     d_eu = pd.read_csv('data/exoplanet_catalogs/exoplanet.eu_catalog_hotjupiter_072621.csv', delimiter=',')
     d_arxv = pd.read_csv('data/exoplanet_catalogs/hotjupiters_northerhemisphere_072621.csv', delimiter=',', header=212)
 
-    # dic_all = make_one_catalog(d_eu, d_arxv)
-    # dic = dic_all.drop_duplicates('NAME')
     d_eu_new = translate_eu(d_eu)
     df = pd.merge(d_eu_new, d_arxv, 'outer',
                   on=['pl_name', 'pl_massj', 'pl_orbper', 'pl_radj', 'pl_orbsmax', 'st_teff', 'st_mass', 'st_rad', 'ra',
@@ -109,37 +64,90 @@ def calc_absorbtion_signal(data):
     A = 2 * data['pl_radj']*0.10049 * H*1.4374e-9 / data['st_rad']**2
     return A
 
+def write_file_with_no_nan_signal(data):
+    signal = 2 * calc_absorbtion_signal(data)
+    signal_percent = signal * 100
+    data['signal_percent'] = signal_percent
+    exoplanets = data[~np.isnan(data['signal_percent'])]
+    exoplanets.to_csv('data/exoplanet_catalogs/exoplanets_dec_over_20_no_nan_signal.csv')
+
+
+def quad_fit(params, x):
+    return params[0] * x ** 2 + params[1] * x + params[2]
+
+
 if __name__=='__main__':
 
-    exoplanets = pd.read_csv('data/exoplanet_catalogs/exoplanets_dec_over_20.csv')
-    signal = 2 * calc_absorbtion_signal(exoplanets)
-    vmag = exoplanets['sy_vmag']
+    def plot_vmag_signal_percent_noise_tfac(
+            vmag_signal_data_file_name='data/exoplanet_catalogs/exoplanets_dec_over_20_no_nan_signal.csv',
+            config='config1', tfactor=np.arange(0.2, 1, 0.2), sigma = 3, savefig=False):
 
-    fig, ax = plt.subplots()
-    ax.semilogx(signal * 100, vmag, '+k')
-    ax.set_ylim((15, 7))
-    ax.set_xlim(0.01, 0.1)
-    ax.set_xlabel('Transit signal of 2 Atmospheric Scale Height (%)')
-    ax.set_ylabel('V magnitude')
-    ax.set_xticks([0.01, 0.1], minor=True)
+        # plots the exoplanets
+        vmag_signal_data = pd.read_csv(vmag_signal_data_file_name)
+        vmag = vmag_signal_data['sy_vmag']
+        signal_percent = vmag_signal_data['signal_percent']
+        labels = vmag_signal_data['pl_name']
 
-    ax2 = ax.twiny()
-    path = 'data/output/'
-    file = 'amplitude_vmag_config4'
-    extension = '.txt'
-    noise = pd.read_csv(path + file + extension)
-    tfactor = np.arange(0.2 , 1, 0.2)
+        fig, ax = plt.subplots(figsize=(12, 10))
+        ax.semilogx(signal_percent, vmag, '+k')
+        ax.set_ylim((16, 7))
+        ax.set_xlim(0.01, 0.1)
+        ax.set_xlabel('Transit signal of 2 Atmospheric Scale Height (%)')
+        ax.set_ylabel('V magnitude')
+        ax.set_xticks([0.01, 0.1], minor=True)
 
-    for j,tfac in enumerate(tfactor):
-        if j % 2:
-            ax2.semilogx(noise[f"amplitude_err_tfac{j + 1}"], noise['magnitude'], '-', label=f'tfac = {round(tfac, 3)}', alpha=0.8)
-        else:
-            ax2.semilogx(noise[f"amplitude_err_tfac{j + 1}"], noise['magnitude'], '--', label=f'tfac = {round(tfac, 3)}', alpha=0.8)
+        # writes the exoplanet names
+        for i, txt in enumerate(labels):
+            ax.annotate(txt, (signal_percent[i], vmag[i]), fontsize=5)
 
-    ax2.axis('off')
-    ax2.legend()
-    fig.suptitle(file.split('_')[2])
-    # fig.savefig(f"vmag_signal_percent_{file.split('_')[2]}")
+        # plots the noise lines for the throughput factors
+        ax2 = ax.twiny()
+
+        path = 'data/output/'
+        file = 'amplitude_vmag_'
+        extension = '.csv'
+        noise_data = pd.read_csv(path + file + config + extension)
+
+        for j, tfac in enumerate(tfactor):
+            if j % 2:
+                ax2.semilogx(sigma * noise_data[f"amplitude_err_tfac{j + 1}"], noise_data['magnitude'], '-',
+                             label=f'tfac = {round(tfac, 3)}', alpha=0.8)
+            else:
+                ax2.semilogx(sigma * noise_data[f"amplitude_err_tfac{j + 1}"], noise_data['magnitude'], '--',
+                             label=f'tfac = {round(tfac, 3)}', alpha=0.8)
+
+            # finding functional form of the noise lines
+            quad_params = np.polyfit(x=3 * noise_data[f"amplitude_err_tfac{j + 1}"], y=noise_data['magnitude'], deg=2)
+            print(quad_params)
+            exo_mags = quad_fit(quad_params, 3 * noise_data[f"amplitude_err_tfac{j + 1}"])
+            ax2.semilogx(3 * noise_data[f"amplitude_err_tfac{j + 1}"], exo_mags, '-k')
+
+        ax2.axis('off')
+        ax2.legend()
+        fig.suptitle(file.split('_')[2])
+        if savefig:
+            fig.savefig(f"figures/vmag_signal_percent_{config}.png", dpi=600)
+
+
+    plot_vmag_signal_percent_noise_tfac(config='config3', savefig=False)
+    # exoplanets = pd.read_csv('data/exoplanet_catalogs/exoplanets_dec_over_20_no_nan_signal.csv')
+    # signal = exoplanets['signal_percent']
+    #
+    # path = 'data/output/'
+    # file = 'amplitude_vmag_config1'
+    # extension = '.csv'
+    # noise_data = pd.read_csv(path + file + extension)
+    #
+    # tfactor = np.arange(0.2, 1, 0.2)
+    # x = []
+    # for ind, tfac in enumerate(tfactor):
+    #     noise_3s = 3 * noise_data[f'amplitude_err_tfac{ind + 1}']
+    #     mag = noise_data['magnitude']
+    #     quad_params = np.polyfit(x=noise_3s, y=mag, deg=2)
+    #     exo_mags = quad_fit(quad_params, signal)
+    #     x.append(exo_mags)
+
+
 
 
 
