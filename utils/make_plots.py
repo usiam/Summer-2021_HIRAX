@@ -11,14 +11,8 @@ import matplotlib.pyplot as plt
 import matplotlib
 import pandas as pd
 
-### Change flux ratio to 1 - Rp/Rs sqaured
-### Put units in ()
-###
-
 class MakePlots():
     def __init__(self, so):
-        # at class initialization, the storage_object is called and the matplotlib necessary functions are called
-        # plt.rc('text', usetex=True)
         font = {'size': 8}
         matplotlib.rc('font', **font)
         matplotlib.style.use('seaborn-pastel')
@@ -372,11 +366,7 @@ class MakePlots():
                    np.transpose([magnitudes, photon_noise, read_noise, dark_noise]), fmt='%1.4e', delimiter=',',
                    header='magnitude, photon_noise, read_noise, dark_noise')
 
-        # save the noises as a func of vmag in a text file
-        # https://numpy.org/doc/stable/reference/generated/numpy.savetxt.html
-
-
-    def plot_SNR_mag_tput(self, magnitudes, amplitudes, tfac = np.arange(0.2 , 1, 0.2), savefig=False):
+    def plot_SNR_mag_tput(self, magnitudes, snr, tfac = np.arange(0.2 , 1, 0.2), savefig=False):
         '''
         :param magnitudes - an array of magnitudes used as the independent variable in the plot
         :param amplitudes - an array of SNR used as the dependent variable in the plot
@@ -386,7 +376,7 @@ class MakePlots():
 
         fig, ax = plt.subplots()
         for i in range(len(tfac)):
-            ax.plot(magnitudes, np.array(amplitudes[i]), '-', label = f'tput_factor = {round(tfac[i], 3)}')
+            ax.plot(magnitudes, np.array(snr[i]), '-', label = f'tput_factor = {round(tfac[i], 3)}')
         ax.set_xlabel('V Magnitude')
         ax.set_ylabel('SNR')
         ax.set_title(f"SNR vs Magnitude - {self.info.hirax.hirax_file.split('_')[2].split('.')[0]}")
@@ -396,14 +386,14 @@ class MakePlots():
         if savefig:
             fig.savefig(f"figures/SNR_mag_tput_plot_{self.info.hirax.hirax_file.split('_')[2].split('.')[0]}", dpi=600)
 
-    def plot_vmag_signal_percent_noise_tfac(vmag_signal_data_file='data/exoplanet_catalogs/exoplanets_dec_over_20_no_nan_signal.csv', config='config1', tfactor=np.arange(0.2 , 1, 0.2), savefig = False):
-            vmag_signal_data = pd.read_csv(vmag_signal_data_file)
+    def plot_vmag_signal_percent_noise_tfac(vmag_signal_data_file_name='data/exoplanet_catalogs/exoplanets_dec_over_20_no_nan_signal.csv', config='config1', tfactor=np.arange(0.2 , 1, 0.2), savefig = False):
+            vmag_signal_data = pd.read_csv(vmag_signal_data_file_name)
             vmag = vmag_signal_data['sy_vmag']
             signal_percent = vmag_signal_data['signal_percent']
             labels = vmag_signal_data['pl_name']
             path = 'data/output/'
             file = 'amplitude_vmag_'
-            extension = '.txt'
+            extension = '.csv'
             noise = pd.read_csv(path + file + config + extension)
             fig, ax = plt.subplots(figsize=(12, 10))
             ax.semilogx(signal_percent, vmag, '+k')

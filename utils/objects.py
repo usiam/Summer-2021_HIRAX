@@ -1,9 +1,6 @@
 import configparser
-import numpy as np
-from distutils.util import strtobool
 
 all = {'storage_object', 'load_object'}
-
 
 class storage_object():
     """

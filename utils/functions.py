@@ -189,8 +189,8 @@ def calc_noise(so: storage_object, fluxes):
     :returns the noise in the detection
     '''
     w_prime = (so.const.theta_s * so.const.focal_length * so.var.magnification) / 206265
-    psf = w_prime / (so.const.pixel_size * 10**-6)
-    n_pix = np.pi * psf ** 2 #calculate tel_rad and keep a note of it (change 10 to so.const.psf)
+    psf_radius = w_prime / (so.const.pixel_size * 10**-6)
+    n_pix = np.pi * psf_radius ** 2 #calculate tel_rad and keep a note of it (change 10 to so.const.psf)
 
     read_noise = so.var.read_n
     dark_noise = np.sqrt(so.var.dark_n * so.var.transit_duration * n_pix)
