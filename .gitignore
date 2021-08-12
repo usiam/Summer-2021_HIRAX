@@ -14,3 +14,4 @@ data/telluric/psg_out_2015.06.17_l0_380nm_l1_900nm_res_0.002nm_lon_204.53_lat_19
 *.pdf
 /reports
 calc_transits_plan_Na.py
+telescope_details.txt
