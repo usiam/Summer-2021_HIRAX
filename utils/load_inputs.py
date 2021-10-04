@@ -158,7 +158,7 @@ class fill_data():
         so.exo.v, so.exo.depth = self.x, interpolate.splev(self.x, tck_exo, der=0, ext=1)
         so.exo.speed = np.arange(so.var.min_exo_speed, so.var.max_exo_speed + 50, 50) * 10 ** 3
 
-    def hirax(self, so, tfac = 1): # do you want me to modify this function a bit? I could do something like
+    def hirax(self, so, tfac = 1):
         '''
         loads the hirax file
         '''
@@ -178,8 +178,8 @@ class fill_data():
         oh_file = np.loadtxt(so.oh.oh_file)
         vraw, sraw = (1*10**7)/(oh_file.T[0])[::-1], ((oh_file.T[1])[::-1])
         tck_oh = interpolate.splrep(vraw, sraw, k=2, s=0)
-        so.oh.v, so.oh.s = self.x, interpolate.splev(self.x, tck_oh, der=0, ext=1)
-
+        so.oh.v, s_absorb = self.x, interpolate.splev(self.x, tck_oh, der=0, ext=1)
+        so.oh.s = 1-s_absorb+1 # make oh lines emit not absorb
 
 
 

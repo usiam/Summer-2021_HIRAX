@@ -13,7 +13,7 @@ import pandas as pd
 
 class MakePlots():
     def __init__(self, so):
-        font = {'size': 8}
+        font = {'size': 12}
         matplotlib.rc('font', **font)
         matplotlib.style.use('seaborn-pastel')
         self.info = so
@@ -190,24 +190,31 @@ class MakePlots():
         '''
         fig, ax1 = plt.subplots()
 
-        lns1 = ax1.plot(self.info.xgrid, self.info.tel.s, color='blue', label="telluric")
+        lns1 = ax1.plot(self.info.xgrid, self.info.tel.s, color='blue', label="Telluric")
 
         for ind, profile in enumerate(self.info.hirax.hfp):
             if ind == 0:
-                lns2 = ax1.plot(self.info.xgrid, profile, color='black', alpha=0.3, label="hirax")
+                lns2 = ax1.plot(self.info.xgrid, profile, color='black', alpha=0.3, label="HIRAX")
+                ax1.fill_between(self.info.xgrid, profile, 0, alpha=0.4,color='gray')
             else:
                 ax1.plot(self.info.xgrid, profile, color='black', alpha=0.3)
+                ax1.fill_between(self.info.xgrid, profile, 0, alpha=0.4,color='gray')
         lns3 = ax1.plot(self.info.xgrid, (self.info.oh.s) ** 100, color="green", label="OH")
 
         ax2 = ax1.twinx()
         lns4 = ax2.plot(self.info.xgrid, self.info.exo.depth, color="brown", label="exoplanet")
+        
+        ratio, error_in_ratio = functions.calc_flux_ratio(self.info)
+        ax2.errorbar(self.info.hirax.center_lam, ratio, xerr=self.info.hirax.width,\
+            yerr=error_in_ratio, fmt='o',\
+            label="Simulated Data",color='r')
 
         lns = lns1 + lns2 + lns3 + lns4
         labs = [l.get_label() for l in lns]
         ax1.legend(lns, labs, loc=0)
 
         ax1.set(xlabel="Wavelength (nm)", ylabel='Hirax throughput',
-                title=f"Telluric, Exoplanet, OH lines, and Hirax model\nWavelength: {self.info.hirax.center_lam}"
+                title=f"No. Transits: {self.info.var.num_transits}"
                       f"\nThroughput:{self.info.hirax.throughput[0]} VMag:{self.info.var.vmag}")
         ax2.set(ylabel=r'$1-\left(\frac{R_{p}}{R_{s}}\right)^{2}$')
         plt.tight_layout()
@@ -302,24 +309,24 @@ class MakePlots():
 
         # plotting
         fig, ax = plt.subplots()
-        ax.errorbar(self.info.hirax.center_lam, ratio, xerr=self.info.hirax.width, yerr=error_in_ratio, fmt='-', label="data")
-        if feature == 'sodium':
-            ax.plot(self.info.xgrid, lorentz_sodium(self.info.xgrid, *popt), '-', label='fit')
-            ax.fill_between(self.info.xgrid, lorentz_sodium(self.info.xgrid, popt[0] + np.sqrt(pcov[0][0]), popt[1]),
-                            lorentz_sodium(self.info.xgrid, popt[0] - np.sqrt(pcov[0][0]), popt[1]), alpha=0.2)
-            ax.plot(self.info.hirax.center_lam, lorentz_sodium(self.info.hirax.center_lam, *popt), '.')
-            ax.set_xlim((575, 600))
-        if feature == 'potassium':
-            ax.plot(self.info.xgrid, lorentz_potassium(self.info.xgrid, *popt), '-', label='fit')
-            ax.fill_between(self.info.xgrid, lorentz_potassium(self.info.xgrid, popt[0] + np.sqrt(pcov[0][0]), popt[1]),
-                            lorentz_potassium(self.info.xgrid, popt[0] - np.sqrt(pcov[0][0]), popt[1]), alpha=0.2)
-            ax.plot(self.info.hirax.center_lam, lorentz_potassium(self.info.hirax.center_lam, *popt), '.')
-            ax.set_xlim((750, 780))
+        ax.errorbar(self.info.hirax.center_lam, ratio, xerr=self.info.hirax.width, yerr=error_in_ratio, fmt='-', label="Simulated Data")
+        # if feature == 'sodium':
+        #     ax.plot(self.info.xgrid, lorentz_sodium(self.info.xgrid, *popt), '-', label='fit')
+        #     ax.fill_between(self.info.xgrid, lorentz_sodium(self.info.xgrid, popt[0] + np.sqrt(pcov[0][0]), popt[1]),
+        #                     lorentz_sodium(self.info.xgrid, popt[0] - np.sqrt(pcov[0][0]), popt[1]), alpha=0.2)
+        #     ax.plot(self.info.hirax.center_lam, lorentz_sodium(self.info.hirax.center_lam, *popt), '.')
+        #     ax.set_xlim((575, 600))
+        # if feature == 'potassium':
+        #     ax.plot(self.info.xgrid, lorentz_potassium(self.info.xgrid, *popt), '-', label='fit')
+        #     ax.fill_between(self.info.xgrid, lorentz_potassium(self.info.xgrid, popt[0] + np.sqrt(pcov[0][0]), popt[1]),
+        #                     lorentz_potassium(self.info.xgrid, popt[0] - np.sqrt(pcov[0][0]), popt[1]), alpha=0.2)
+        #     ax.plot(self.info.hirax.center_lam, lorentz_potassium(self.info.hirax.center_lam, *popt), '.')
+        #     ax.set_xlim((750, 780))
 
         ax.set_xlabel('Wavelength (nm)')
         ax.set_ylabel('Ratio of flux')
-        ax.set_title(f'Fitting the data to an inverse lorentz profile with center and constant fixed'
-                     f'\nThroughput:{self.info.hirax.throughput[0]} VMag:{self.info.var.vmag}')
+        #ax.set_title(f'Fitting the data to an inverse lorentz profile with center and constant fixed'
+        #             f'\nThroughput:{self.info.hirax.throughput[0]} VMag:{self.info.var.vmag}')
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
         ax.legend(loc='best', bbox_to_anchor=(0.5, 0., 0.5, 0.5))
@@ -386,7 +393,12 @@ class MakePlots():
         if savefig:
             fig.savefig(f"figures/SNR_mag_tput_plot_{self.info.hirax.hirax_file.split('_')[2].split('.')[0]}", dpi=600)
 
-    def plot_vmag_signal_percent_noise_tfac(vmag_signal_data_file_name='data/exoplanet_catalogs/exoplanets_dec_over_20_no_nan_signal.csv', config='config1', tfactor=np.arange(0.2 , 1, 0.2), savefig = False):
+    def plot_vmag_signal_percent_noise_tfac(self, vmag_signal_data_file_name=\
+        'data/exoplanet_catalogs/exoplanets_dec_over_20_no_nan_signal.csv', \
+        config='config1', tfactor=np.arange(0.2 , 1, 0.2), savefig = False,\
+        sigma_thresh=3):
+            """
+            """
             vmag_signal_data = pd.read_csv(vmag_signal_data_file_name)
             vmag = vmag_signal_data['sy_vmag']
             signal_percent = vmag_signal_data['signal_percent']
@@ -406,16 +418,72 @@ class MakePlots():
             for i, txt in enumerate(labels):
                 ax.annotate(txt, (signal_percent[i], vmag[i]), fontsize=5)
 
-            ax2 = ax.twiny()
-
             for j,tfac in enumerate(tfactor):
-                if j % 2:
-                    ax2.semilogx(noise[f"amplitude_err_tfac{j + 1}"], noise['magnitude'], '-', label=f'tfac = {round(tfac, 3)}', alpha=0.8)
-                else:
-                    ax2.semilogx(noise[f"amplitude_err_tfac{j + 1}"], noise['magnitude'], '--', label=f'tfac = {round(tfac, 3)}', alpha=0.8)
+                ax.semilogx(100 * (sigma_thresh)\
+                    * noise[f"amplitude_err_tfac{j + 1}"],noise['magnitude'],\
+                    '-',label=f"tfac = {round(tfac, 3)}", alpha=0.8) 
 
-            ax2.axis('off')
-            ax2.legend()
             fig.suptitle(file.split('_')[2])
             if savefig:
                 fig.savefig(f"figures/vmag_signal_percent_{config}.png", dpi=600)
+
+
+    def plot_vmag_signal_percent_noise_tfac_ashley(self, vmag_signal_data_file_name=\
+        'data/exoplanet_catalogs/exoplanets_dec_over_20_no_nan_signal.csv', \
+        config='config1', tfactor=np.arange(0.2 , 1, 0.2), savefig = False,\
+        sigma_thresh=3):
+            """
+            for palomar proposal - highlight observable planets with red star, compare to smaller aperture telescope
+            assume 40%
+            """
+            def load_noise_data(config):
+                path = 'data/output/'
+                file = 'amplitude_vmag_'
+                extension = '.csv'
+                return pd.read_csv(path + file + config + extension)
+
+            vmag_signal_data = pd.read_csv(vmag_signal_data_file_name)
+            vmag = vmag_signal_data['sy_vmag']
+            signal_percent = vmag_signal_data['signal_percent']* 2.5/2
+            labels = vmag_signal_data['pl_name']
+            noise = load_noise_data(config)
+            noise2 = load_noise_data(config + '_60m_3transits')
+
+            fig, ax = plt.subplots(figsize=(8, 6))
+            ax.semilogx(signal_percent , vmag, '+k')
+            ax.set_ylim((12, 7))
+            ax.set_xlim(0.01, 0.1)
+            ax.set_xlabel('Differential Transit Signal (%)')
+            ax.set_ylabel('V magnitude')
+            ax.set_xticks([0.01, 0.1], minor=True)
+
+            for i, txt in enumerate(labels):
+                if txt in ['HD 209458 b', 'WASP-69 b', 'KELT-9 b', 'MASCARA-2 b/KELT-20 b']:
+                    ax.plot(signal_percent[i]-0.0001, vmag[i]+.05, '*r',ms=10)
+                    ax.annotate(txt, (signal_percent[i], vmag[i]), fontsize=9)
+                else:
+                    ax.annotate(txt, (signal_percent[i], vmag[i]), fontsize=5)
+
+            tfacs = np.arange(0.2 , 1, 0.2)
+            itfac = 1 # just plot 0.4 throughput line
+            ax.semilogx(100 * sigma_thresh\
+                    * noise[f"amplitude_err_tfac{itfac + 1}"],noise['magnitude'],\
+                    'goldenrod',label=f"tfac = {round(tfacs[itfac], 3)}", alpha=0.8) 
+            ax.semilogx(100 * sigma_thresh/np.sqrt(2)\
+                    * noise[f"amplitude_err_tfac{itfac + 1}"],noise['magnitude'],\
+                    'goldenrod',ls='--',label=f"tfac = {round(tfacs[itfac], 3)}", alpha=0.8) 
+            ax.semilogx(100 * sigma_thresh\
+                    * noise2[f"amplitude_err_tfac{itfac + 1}"],noise2['magnitude'],\
+                    'c-',label=f"tfac = {round(tfacs[itfac], 3)}", alpha=0.8) 
+            itfac = 3 # 0.8 throughput
+            ax.semilogx(100 * sigma_thresh/np.sqrt(3)\
+                    * noise[f"amplitude_err_tfac{itfac + 1}"],noise['magnitude'],\
+                    'm',ls='-.',label=f"tfac = {round(tfacs[itfac], 3)}", alpha=0.8) 
+
+            if savefig:
+                plt.savefig(f"figures/vmag_signal_percent_{config}_ashley.png", dpi=600)
+
+
+
+
+

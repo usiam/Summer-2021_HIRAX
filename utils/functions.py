@@ -178,8 +178,8 @@ def calc_flux(so: storage_object, exoplanet=True, exo_speed=0,
         [np.trapz((stel_spec * depth * so.tel.s * profile), original_xgrid) * area * exposure_time for profile in
          so.hirax.hfp])
 
-    flux_err_arr = calc_noise(so, fluxes=flux_arr)/np.sqrt(so.var.num_transits)
-    return flux_arr, flux_err_arr
+    flux_err_arr = calc_noise(so, fluxes=flux_arr)
+    return flux_arr * so.var.num_transits, flux_err_arr * np.sqrt(so.var.num_transits)
 
 def calc_noise(so: storage_object, fluxes):
     '''
