@@ -13,7 +13,7 @@ import pandas as pd
 
 class MakePlots():
     def __init__(self, so):
-        font = {'size': 12}
+        font = {'size': 14}
         matplotlib.rc('font', **font)
         matplotlib.style.use('seaborn-pastel')
         self.info = so
@@ -407,22 +407,24 @@ class MakePlots():
             file = 'amplitude_vmag_'
             extension = '.csv'
             noise = pd.read_csv(path + file + config + extension)
-            fig, ax = plt.subplots(figsize=(12, 10))
+            fig, ax = plt.subplots(figsize=(9, 7))
             ax.semilogx(signal_percent, vmag, '+k')
-            ax.set_ylim((16, 7))
+            ax.set_ylim((12, 7))
             ax.set_xlim(0.01, 0.1)
-            ax.set_xlabel('Transit signal of 2 Atmospheric Scale Height (%)')
+            ax.set_xlabel('Differential Transit Signal (%)')
             ax.set_ylabel('V magnitude')
             ax.set_xticks([0.01, 0.1], minor=True)
 
+            lstyles = ['-', '--','-.', 'dotted']
             for i, txt in enumerate(labels):
-                ax.annotate(txt, (signal_percent[i], vmag[i]), fontsize=5)
+                ax.annotate(txt, (signal_percent[i], vmag[i]), fontsize=7)
 
             for j,tfac in enumerate(tfactor):
                 ax.semilogx(100 * (sigma_thresh)\
                     * noise[f"amplitude_err_tfac{j + 1}"],noise['magnitude'],\
-                    '-',label=f"tfac = {round(tfac, 3)}", alpha=0.8) 
+                    ls=lstyles[j],label=f"Throughput = {round(tfac, 3)}", alpha=0.8) 
 
+            ax.legend(fontsize=12)
             fig.suptitle(file.split('_')[2])
             if savefig:
                 fig.savefig(f"figures/vmag_signal_percent_{config}.png", dpi=600)
@@ -434,7 +436,7 @@ class MakePlots():
         sigma_thresh=3):
             """
             for palomar proposal - highlight observable planets with red star, compare to smaller aperture telescope
-            assume 40%
+            assume 40% throughput, use config 6
             """
             def load_noise_data(config):
                 path = 'data/output/'
