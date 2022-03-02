@@ -3,7 +3,7 @@ Anaconda environment: py3
 
 Purpose: 
 -------
-Calculate the SNR of H&K and KPF spectrometers give exposure time, stellar V magnitude, and stellar temperature
+Optimizing bandpass configuration for a novel instrument - HIRAX - to allow observations of exoplanet (Hot Jupiter) atmosphere from the Earth.
 
 Usage:
 ----------
@@ -23,7 +23,5 @@ To Do:
 
 Notes:
 ---------
-This is a work in progress, dumping code here for future edits
-
-Can check number of pixels KPF res element spans in following fits file: 
-KPF_1000000rays_orders103-138_-_cal_111.11W_lfc_-_sci_500.00W_lfc_-_sky_500.00W_lfc_-_normalized_145_Green.FITS
+Apply velocity shifts on load
+Test new bandpass configurations out

@@ -2,6 +2,7 @@ import configparser
 
 all = {'storage_object', 'load_object'}
 
+
 class storage_object():
     """
     Main storage object for organization
@@ -29,7 +30,8 @@ class RUN():
 
     def __init__(self):
         self.plot_prefix = None  # stellar spec file name
-        self.savename = None  # wavelength like normal (should match exoplanet and be in standard wavelength)
+        # wavelength like normal (should match exoplanet and be in standard wavelength)
+        self.savename = None
 
 
 class CONSTANT():
@@ -42,9 +44,9 @@ class CONSTANT():
         self.res_hk = None
         self.tel_area = None
         self.hale_area = None
-        self.focal_length = None # in meter
-        self.pixel_size = None # in micrometer
-        self.theta_s = None # in arcsec
+        self.focal_length = None  # in meter
+        self.pixel_size = None  # in micrometer
+        self.theta_s = None  # in arcsec
         self.psf = None
         # wheres res_hk and tel_area
 
@@ -55,15 +57,17 @@ class VARIABLE():
     def __init__(self):
         self.vmag = None  # v band magntidue
         self.teff = None  # K, 100K steps
-        self.transit_duration = None # in seconds
-        self.min_exo_speed = None # in km/s
-        self.max_exo_speed = None # in km/s
-        self.stel_speed = None # in km/s
+        self.transit_duration = None  # in seconds
+        self.min_exo_speed = None  # in km/s
+        self.max_exo_speed = None  # in km/s
+        self.stel_speed = None  # in km/s
+        self.barycentric_speed = None  # in km/s
         self.dark_n = None
         self.read_n = None
         self.saturation = None
         self.magnification = None
         self.num_transits = None
+
 
 class FILTER():
     "float values"
@@ -79,10 +83,12 @@ class STELLAR():
 
     def __init__(self):
         # User optional define:
-        self.phoenix_file = None  # stellar spec file name, **make this take temp value in future
+        # stellar spec file name, **make this take temp value in future
+        self.phoenix_file = None
         # Filled in by code:
         self.speed = None
-        self.vraw = None  # wavelength like normal (should match exoplanet and be in standard wavelength)
+        # wavelength like normal (should match exoplanet and be in standard wavelength)
+        self.vraw = None
         self.sraw = None  # spectrum
 
 
@@ -109,6 +115,7 @@ class OUTPUT():
 
 class EXOPLANET():
     "exoplanet transmission file, static"
+
     def __init__(self):
         self.exoplanet_file = None
         self.v = None  # wavelength
@@ -118,6 +125,7 @@ class EXOPLANET():
 
 class HIRAX():
     "Hirax filter profile file, static"
+
     def __init__(self):
         self.hirax_file = None
         self.wavegrid = None
@@ -129,10 +137,12 @@ class HIRAX():
 
 class OH():
     "OH transmission file, static"
+
     def __init__(self):
         self.oh_file = None
         self.v = None
         self.s = None
+
 
 def LoadConfig(configfile, config={}):
     """

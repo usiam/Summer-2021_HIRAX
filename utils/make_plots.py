@@ -1,23 +1,24 @@
 ##############################################################
 # Makes neccessary plots
 ##############################################################
+import pandas as pd
+import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+from utils import functions
 import os
 
 from scipy.optimize import curve_fit
 os.sys.path.append('./utils/')
-from utils import functions
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib
-import pandas as pd
+
 
 class MakePlots():
     def __init__(self, so):
-        font = {'size': 8}
+        font = {'size': 14}
         matplotlib.rc('font', **font)
         matplotlib.style.use('seaborn-pastel')
         self.info = so
-        plt.ion()
+
         self.center_wavelengths = self.info.hirax.center_lam
 
     def plot_example_spectra(self, savefig=False):
@@ -35,31 +36,39 @@ class MakePlots():
         axs[0][1].set(ylabel='Depth',
                       title="Exoplanet model")
 
-        axs[1][0].plot(self.info.stel.vraw, self.info.stel.sraw, color='yellow')
+        axs[1][0].plot(self.info.stel.vraw,
+                       self.info.stel.sraw, color='yellow')
         axs[1][0].set(ylabel='Spectrum',
                       title="Stellar model")
 
-        axs[1][1].plot(self.info.hirax.wavegrid, self.info.hirax.hfp[0], color='black')
+        axs[1][1].plot(self.info.hirax.wavegrid,
+                       self.info.hirax.hfp[0], color='black')
         axs[1][1].set(ylabel='Bandpass',
                       title="HIRAX model")
         fig.text(0.525, 0.02, 'wavelength, nm', ha='center')
         plt.tight_layout()
+        plt.show()
         if savefig:
             fig.savefig('figures/example_spectra.png')
 
     def plot_hirax_profile(self, savefig=False):
         fig, ax = plt.subplots()
         for profile in self.info.hirax.hfp:
-            ax.fill(self.info.hirax.wavegrid, profile, color='black', alpha=0.3)
+            ax.fill(self.info.hirax.wavegrid,
+                    profile, color='black', alpha=0.3)
         ax.set_ylabel('Throughput')
         ax.set_xlabel('Wavelength (nm)')
-        ax.set_xlim((min(self.info.hirax.center_lam)-2, max(self.info.hirax.center_lam)+2))
+        ax.set_xlim((min(self.info.hirax.center_lam)-2,
+                    max(self.info.hirax.center_lam)+2))
         ax.set_ylim((0.4, 1.05))
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
-        ax.set_xticks(ticks=np.arange(min(self.info.hirax.center_lam), max(self.info.hirax.center_lam)+2, 2))
+        ax.set_xticks(ticks=np.arange(
+            min(self.info.hirax.center_lam), max(self.info.hirax.center_lam)+2, 2))
+        plt.show()
         if savefig:
-            fig.savefig(f"figures/hirax_profile_{self.info.hirax.hirax_file.split('_')[2].split('.')[0]}.png", dpi=600)
+            fig.savefig(
+                f"figures/hirax_profile_{self.info.hirax.hirax_file.split('_')[2].split('.')[0]}.png", dpi=600)
 
     def plot_no_doppler(self, savefig=False):
         '''
@@ -68,11 +77,15 @@ class MakePlots():
         '''
         # xaxis = self.info.hirax.center_lam
         flux, flux_err = functions.calc_flux(self.info)
-        no_exo_flux, no_exo_flux_err = functions.calc_flux(self.info, exoplanet=False)
+        no_exo_flux, no_exo_flux_err = functions.calc_flux(
+            self.info, exoplanet=False)
         ratio = flux / no_exo_flux
-        error_in_ratio = ratio * np.sqrt((flux_err / flux) ** 2 + (no_exo_flux_err / no_exo_flux) ** 2)
+        error_in_ratio = ratio * \
+            np.sqrt((flux_err / flux) ** 2 +
+                    (no_exo_flux_err / no_exo_flux) ** 2)
         fig, ax = plt.subplots()
-        ax.errorbar(self.center_wavelengths, ratio, xerr=self.info.hirax.width, yerr=error_in_ratio, fmt='.', color='black')
+        ax.errorbar(self.center_wavelengths, ratio, xerr=self.info.hirax.width,
+                    yerr=error_in_ratio, fmt='.', color='black')
         ax.plot(self.center_wavelengths, ratio, '-', alpha=0.3, color='blue')
         ax.set_xlabel("Wavelength (nm)")
         ax.set_ylabel(r'$1-\left(\frac{R_{p}}{R_{s}}\right)^{2}$')
@@ -92,16 +105,19 @@ class MakePlots():
         '''
         # xaxis = self.info.hirax.center_lam
         exo_speeds = self.info.exo.speed
-        flux = [functions.calc_flux(self.info, exo_speed=speed, stel_speed=0) for speed in exo_speeds]
+        flux = [functions.calc_flux(
+            self.info, exo_speed=speed, stel_speed=0) for speed in exo_speeds]
         no_exo_flux = [functions.calc_flux(self.info, exoplanet=False, exo_speed=speed, stel_speed=0) for
                        speed in exo_speeds]
-        ratios = [fl[0] / no_exo_fl[0] for fl, no_exo_fl in zip(flux, no_exo_flux)]
+        ratios = [fl[0] / no_exo_fl[0]
+                  for fl, no_exo_fl in zip(flux, no_exo_flux)]
         error_in_ratio = [r * np.sqrt((f[1] / f[0]) ** 2 + (ef[1] / ef[0]) ** 2) for r, f, ef in
                           zip(ratios, flux, no_exo_flux)]
         labels = [f"{str(speed / 1000)} km/s" for speed in exo_speeds]
         fig, ax = plt.subplots()
         for ratio, yerr, label in zip(ratios, error_in_ratio, labels):
-            ax.errorbar(self.center_wavelengths, ratio, xerr=self.info.hirax.width, yerr=yerr, fmt='.', color="black", alpha=0.3)
+            ax.errorbar(self.center_wavelengths, ratio, xerr=self.info.hirax.width,
+                        yerr=yerr, fmt='.', color="black", alpha=0.3)
             ax.plot(self.center_wavelengths, ratio, '-', label=f"{label}")
             ax.grid()
         plt.xlabel("Wavelength (nm)")
@@ -123,24 +139,30 @@ class MakePlots():
         '''
         # xaxis = self.info.hirax.center_lam
         stel_speed = self.info.stel.speed
+        bary_speed = self.info.var.barycentric_speed * 1000
         exo_speeds = self.info.exo.speed + stel_speed
-        flux = [functions.calc_flux(self.info, exo_speed=speed, stel_speed=stel_speed) for speed in exo_speeds]
+        flux = [functions.calc_flux(
+            self.info, exo_speed=speed, stel_speed=stel_speed) for speed in exo_speeds]
         no_exo_flux = [functions.calc_flux(self.info, exoplanet=False, exo_speed=speed, stel_speed=stel_speed) for speed
                        in exo_speeds]
-        ratios = [fl[0] / no_exo_fl[0] for fl, no_exo_fl in zip(flux, no_exo_flux)]
+        ratios = [fl[0] / no_exo_fl[0]
+                  for fl, no_exo_fl in zip(flux, no_exo_flux)]
         error_in_ratio = [r * np.sqrt((f[1] / f[0]) ** 2 + (ef[1] / ef[0]) ** 2) for r, f, ef in
                           zip(ratios, flux, no_exo_flux)]
 
         fig, ax = plt.subplots()
-        labels = [f"{str(speed / 1000)} km/s" for speed in exo_speeds]
+        labels = [
+            f"v_$exo$ = {str(speed / 1000)} km/s" for speed in exo_speeds]
         for ratio, yerr, label in zip(ratios, error_in_ratio, labels):
-            ax.errorbar(self.center_wavelengths, ratio, yerr=yerr, fmt='.', color="black", alpha=0.3)
+            ax.errorbar(self.center_wavelengths, ratio, yerr=yerr,
+                        fmt='.', color="black", alpha=0.3)
             ax.plot(self.center_wavelengths, ratio, '-', label=f"{label}")
         plt.xlabel("Wavelength (nm)")
         plt.ylabel(r'$1-\left(\frac{R_{p}}{R_{s}}\right)^{2}$')
         plt.title(
-            f"Ratio of flux with and without exoplanet vs Wavelength\nStellar speed = {stel_speed / 1000} km/s")
+            f"Ratio of flux with and without exoplanet vs Wavelength\nStellar speed = {(stel_speed - bary_speed) / 1000}  km/s\nBarycentric speed = {bary_speed / 1000} km/s")
         plt.legend()
+        plt.show()
         if savefig:
             plt.savefig(
                 f'./figures/ratio_of_fluxes_w_and_wo_exoplanet_errorbar_plot-exospeeds_{exo_speeds[0] / 100}-{exo_speeds[-1] / 1000}kms_stelspeed_{stel_speed / 1000}kms.png',
@@ -157,24 +179,30 @@ class MakePlots():
         # xaxis = self.info.hirax.center_lam
         stel_speeds = self.info.stel.speed
 
-        fig, ax = plt.subplots(len(stel_speeds), 1, sharex=True, constrained_layout=True, figsize=(6, 20))
+        fig, ax = plt.subplots(
+            len(stel_speeds), 1, sharex=True, constrained_layout=True, figsize=(6, 20))
         for stel_speed in stel_speeds:
             exo_speeds = self.info.exo.speed + stel_speed
-            flux = [functions.calc_flux(self.info, exo_speed=speed, stel_speed=stel_speed) for speed in exo_speeds]
+            flux = [functions.calc_flux(
+                self.info, exo_speed=speed, stel_speed=stel_speed) for speed in exo_speeds]
             no_exo_flux = [functions.calc_flux(self.info, exoplanet=False, exo_speed=speed, stel_speed=stel_speed) for
                            speed in exo_speeds]
-            ratios = [fl[0] / no_exo_fl[0] for fl, no_exo_fl in zip(flux, no_exo_flux)]
+            ratios = [fl[0] / no_exo_fl[0]
+                      for fl, no_exo_fl in zip(flux, no_exo_flux)]
             error_in_ratio = [r * np.sqrt((f[1] / f[0]) ** 2 + (ef[1] / ef[0]) ** 2) for r, f, ef in
                               zip(ratios, flux, no_exo_flux)]
 
             labels = [f"{str(speed / 1000)} km/s" for speed in exo_speeds]
             num = np.arange(0, len(ratios), 1)
             for ratio, yerr, label, i in zip(ratios, error_in_ratio, labels, num):
-                ax[i].errorbar(self.center_wavelengths, ratio, xerr=self.info.hirax.width, yerr=yerr, fmt='.', color="black", alpha=0.3)
-                ax[i].plot(self.center_wavelengths, ratio, '-', label=f"{label}")
+                ax[i].errorbar(self.center_wavelengths, ratio, xerr=self.info.hirax.width,
+                               yerr=yerr, fmt='.', color="black", alpha=0.3)
+                ax[i].plot(self.center_wavelengths,
+                           ratio, '-', label=f"{label}")
                 ax[i].legend(bbox_to_anchor=(1.01, 1.0), loc='upper left')
                 ax[i].grid()
-        fig.suptitle(f"Flux Ratio vs Wavelength with effect of doppler shift\nThroughput:{self.info.hirax.throughput[0]} VMag:{self.info.var.vmag}")
+        fig.suptitle(
+            f"Flux Ratio vs Wavelength with effect of doppler shift\nThroughput:{self.info.hirax.throughput[0]} VMag:{self.info.var.vmag}")
         fig.supxlabel('Wavelength (nm)')
         fig.supylabel(r'$1-\left(\frac{R_{p}}{R_{s}}\right)^{2}$')
         if savefig:
@@ -190,17 +218,21 @@ class MakePlots():
         '''
         fig, ax1 = plt.subplots()
 
-        lns1 = ax1.plot(self.info.xgrid, self.info.tel.s, color='blue', label="telluric")
+        lns1 = ax1.plot(self.info.xgrid, self.info.tel.s,
+                        color='blue', label="telluric")
 
         for ind, profile in enumerate(self.info.hirax.hfp):
             if ind == 0:
-                lns2 = ax1.plot(self.info.xgrid, profile, color='black', alpha=0.3, label="hirax")
+                lns2 = ax1.plot(self.info.xgrid, profile,
+                                color='black', alpha=0.3, label="hirax")
             else:
                 ax1.plot(self.info.xgrid, profile, color='black', alpha=0.3)
-        lns3 = ax1.plot(self.info.xgrid, (self.info.oh.s) ** 100, color="green", label="OH")
+        lns3 = ax1.plot(self.info.xgrid, (self.info.oh.s)
+                        ** 100, color="green", label="OH")
 
         ax2 = ax1.twinx()
-        lns4 = ax2.plot(self.info.xgrid, self.info.exo.depth, color="brown", label="exoplanet")
+        lns4 = ax2.plot(self.info.xgrid, self.info.exo.depth,
+                        color="brown", label="exoplanet")
 
         lns = lns1 + lns2 + lns3 + lns4
         labs = [l.get_label() for l in lns]
@@ -222,14 +254,17 @@ class MakePlots():
         :param savefig: Saves the generated figure
         '''
         exo_speeds = np.arange(-200, 300, 100) * 10 ** 3
-        fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(12, 6), sharey=True, constrained_layout=True)
+        fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(
+            12, 6), sharey=True, constrained_layout=True)
         labels = [f"{str(speed / 1000)} km/s" for speed in exo_speeds]
         for i in range(len(axs)):
             axs[i].spines['right'].set_visible(False)
             axs[i].spines['top'].set_visible(False)
             for ind, speed in enumerate(exo_speeds):
-                shifted_exo_spec = functions.shift_spectra(self.info, xgrid=self.info.xgrid, speed=speed, choice = 'exoplanet')
-                non_zero_shifted_exo_spec = shifted_exo_spec[np.nonzero(shifted_exo_spec)]
+                shifted_exo_spec = functions.shift_spectra(
+                    self.info, xgrid=self.info.xgrid, speed=speed, choice='exoplanet')
+                non_zero_shifted_exo_spec = shifted_exo_spec[np.nonzero(
+                    shifted_exo_spec)]
                 x = self.info.exo.v[np.nonzero(shifted_exo_spec)]
                 axs[i].plot(x, non_zero_shifted_exo_spec, label=labels[ind])
                 axs[i].set_xlim((580, 600))
@@ -241,7 +276,8 @@ class MakePlots():
 
             ax2 = axs[i].twinx()
             for profile in self.info.hirax.hfp:
-                ax2.fill(self.info.hirax.wavegrid, profile, color='black', alpha=0.3)
+                ax2.fill(self.info.hirax.wavegrid,
+                         profile, color='black', alpha=0.3)
 
         ax2.legend(['Hirax'], loc='upper left')
         fig.suptitle(f'Exoplanet spectra vs Wavelength'
@@ -251,7 +287,7 @@ class MakePlots():
         if savefig:
             fig.savefig(f"figures/hirax_over_shifted_exo.png", dpi=600)
 
-    def plot_lorentz_fit(self, savefig=False, feature = 'sodium'):
+    def plot_lorentz_fit(self, savefig=False, feature='sodium'):
         '''
         :param savefig - saves the generated figure if True
         :param feature - takes a string input of what kind of feature is being targeted
@@ -298,22 +334,28 @@ class MakePlots():
             return -popt, pcov
 
         ratio, error_in_ratio = functions.calc_flux_ratio(self.info)
-        popt, pcov = fit_lorentz_aw(self.info.hirax.center_lam, ratio, y_err=error_in_ratio, init_guess=[-0.00035, 3], choice=feature)
+        popt, pcov = fit_lorentz_aw(self.info.hirax.center_lam, ratio,
+                                    y_err=error_in_ratio, init_guess=[-0.00035, 3], choice=feature)
 
         # plotting
         fig, ax = plt.subplots()
-        ax.errorbar(self.info.hirax.center_lam, ratio, xerr=self.info.hirax.width, yerr=error_in_ratio, fmt='-', label="data")
+        ax.errorbar(self.info.hirax.center_lam, ratio, xerr=self.info.hirax.width,
+                    yerr=error_in_ratio, fmt='-', label="data")
         if feature == 'sodium':
-            ax.plot(self.info.xgrid, lorentz_sodium(self.info.xgrid, *popt), '-', label='fit')
+            ax.plot(self.info.xgrid, lorentz_sodium(
+                self.info.xgrid, *popt), '-', label='fit')
             ax.fill_between(self.info.xgrid, lorentz_sodium(self.info.xgrid, popt[0] + np.sqrt(pcov[0][0]), popt[1]),
                             lorentz_sodium(self.info.xgrid, popt[0] - np.sqrt(pcov[0][0]), popt[1]), alpha=0.2)
-            ax.plot(self.info.hirax.center_lam, lorentz_sodium(self.info.hirax.center_lam, *popt), '.')
+            ax.plot(self.info.hirax.center_lam, lorentz_sodium(
+                self.info.hirax.center_lam, *popt), '.')
             ax.set_xlim((575, 600))
         if feature == 'potassium':
-            ax.plot(self.info.xgrid, lorentz_potassium(self.info.xgrid, *popt), '-', label='fit')
+            ax.plot(self.info.xgrid, lorentz_potassium(
+                self.info.xgrid, *popt), '-', label='fit')
             ax.fill_between(self.info.xgrid, lorentz_potassium(self.info.xgrid, popt[0] + np.sqrt(pcov[0][0]), popt[1]),
                             lorentz_potassium(self.info.xgrid, popt[0] - np.sqrt(pcov[0][0]), popt[1]), alpha=0.2)
-            ax.plot(self.info.hirax.center_lam, lorentz_potassium(self.info.hirax.center_lam, *popt), '.')
+            ax.plot(self.info.hirax.center_lam, lorentz_potassium(
+                self.info.hirax.center_lam, *popt), '.')
             ax.set_xlim((750, 780))
 
         ax.set_xlabel('Wavelength (nm)')
@@ -339,12 +381,15 @@ class MakePlots():
             cload.stellar(self.info)
             cload.hirax(self.info, tfac=1)
             flux, _ = functions.calc_flux(self.info)  # only one band
-            w_prime = (self.info.const.theta_s * self.info.const.focal_length * self.info.var.magnification) / 206265
+            w_prime = (self.info.const.theta_s * self.info.const.focal_length *
+                       self.info.var.magnification) / 206265
             psf = w_prime / (self.info.const.pixel_size * 10 ** -6)
             n_pix = np.pi * psf ** 2
             ph_noise = np.sqrt(flux[0])
-            rd_noise = self.info.var.read_n * np.sqrt((flux[0] * n_pix / (self.info.var.saturation * n_pix)))
-            drk_noise = np.sqrt(self.info.var.dark_n * self.info.var.transit_duration * n_pix)
+            rd_noise = self.info.var.read_n * \
+                np.sqrt((flux[0] * n_pix / (self.info.var.saturation * n_pix)))
+            drk_noise = np.sqrt(self.info.var.dark_n *
+                                self.info.var.transit_duration * n_pix)
             photon_noise.append(ph_noise)
             read_noise.append(rd_noise)
             dark_noise.append(drk_noise)
@@ -354,7 +399,8 @@ class MakePlots():
         ax.plot(magnitudes, dark_noise, '-', label='dark noise')
         ax.set_xlabel('v mag')
         ax.set_ylabel('noise')
-        ax.set_title(f'Noise vs Magnitude\nThroughput:{self.info.hirax.throughput[0]}')
+        ax.set_title(
+            f'Noise vs Magnitude\nThroughput:{self.info.hirax.throughput[0]}')
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
         ax.legend(loc='upper right')
@@ -366,7 +412,7 @@ class MakePlots():
                    np.transpose([magnitudes, photon_noise, read_noise, dark_noise]), fmt='%1.4e', delimiter=',',
                    header='magnitude, photon_noise, read_noise, dark_noise')
 
-    def plot_SNR_mag_tput(self, magnitudes, snr, tfac = np.arange(0.2 , 1, 0.2), savefig=False):
+    def plot_SNR_mag_tput(self, magnitudes, snr, tfac=np.arange(0.2, 1, 0.2), savefig=False):
         '''
         :param magnitudes - an array of magnitudes used as the independent variable in the plot
         :param amplitudes - an array of SNR used as the dependent variable in the plot
@@ -376,46 +422,51 @@ class MakePlots():
 
         fig, ax = plt.subplots()
         for i in range(len(tfac)):
-            ax.plot(magnitudes, np.array(snr[i]), '-', label = f'tput_factor = {round(tfac[i], 3)}')
+            ax.plot(magnitudes, np.array(
+                snr[i]), '-', label=f'tput_factor = {round(tfac[i], 3)}')
         ax.set_xlabel('V Magnitude')
         ax.set_ylabel('SNR')
-        ax.set_title(f"SNR vs Magnitude - {self.info.hirax.hirax_file.split('_')[2].split('.')[0]}")
+        ax.set_title(
+            f"SNR vs Magnitude - {self.info.hirax.hirax_file.split('_')[2].split('.')[0]}")
         ax.spines['right'].set_visible(False)
         ax.spines['top'].set_visible(False)
         ax.legend(loc='upper right')
         if savefig:
-            fig.savefig(f"figures/SNR_mag_tput_plot_{self.info.hirax.hirax_file.split('_')[2].split('.')[0]}", dpi=600)
+            fig.savefig(
+                f"figures/SNR_mag_tput_plot_{self.info.hirax.hirax_file.split('_')[2].split('.')[0]}", dpi=600)
 
-    def plot_vmag_signal_percent_noise_tfac(vmag_signal_data_file_name='data/exoplanet_catalogs/exoplanets_dec_over_20_no_nan_signal.csv', config='config1', tfactor=np.arange(0.2 , 1, 0.2), savefig = False):
-            vmag_signal_data = pd.read_csv(vmag_signal_data_file_name)
-            vmag = vmag_signal_data['sy_vmag']
-            signal_percent = vmag_signal_data['signal_percent']
-            labels = vmag_signal_data['pl_name']
-            path = 'data/output/'
-            file = 'amplitude_vmag_'
-            extension = '.csv'
-            noise = pd.read_csv(path + file + config + extension)
-            fig, ax = plt.subplots(figsize=(12, 10))
-            ax.semilogx(signal_percent, vmag, '+k')
-            ax.set_ylim((16, 7))
-            ax.set_xlim(0.01, 0.1)
-            ax.set_xlabel('Transit signal of 2 Atmospheric Scale Height (%)')
-            ax.set_ylabel('V magnitude')
-            ax.set_xticks([0.01, 0.1], minor=True)
+    def plot_vmag_signal_percent_noise_tfac(vmag_signal_data_file_name='data/exoplanet_catalogs/exoplanets_dec_over_20_no_nan_signal.csv', config='config1', tfactor=np.arange(0.2, 1, 0.2), savefig=False):
+        vmag_signal_data = pd.read_csv(vmag_signal_data_file_name)
+        vmag = vmag_signal_data['sy_vmag']
+        signal_percent = vmag_signal_data['signal_percent']
+        labels = vmag_signal_data['pl_name']
+        path = 'data/output/'
+        file = 'amplitude_vmag_'
+        extension = '.csv'
+        noise = pd.read_csv(path + file + config + extension)
+        fig, ax = plt.subplots(figsize=(12, 10))
+        ax.semilogx(signal_percent, vmag, '+k')
+        ax.set_ylim((16, 7))
+        ax.set_xlim(0.01, 0.1)
+        ax.set_xlabel('Transit signal of 2 Atmospheric Scale Height (%)')
+        ax.set_ylabel('V magnitude')
+        ax.set_xticks([0.01, 0.1], minor=True)
 
-            for i, txt in enumerate(labels):
-                ax.annotate(txt, (signal_percent[i], vmag[i]), fontsize=5)
+        for i, txt in enumerate(labels):
+            ax.annotate(txt, (signal_percent[i], vmag[i]), fontsize=5)
 
-            ax2 = ax.twiny()
+        ax2 = ax.twiny()
 
-            for j,tfac in enumerate(tfactor):
-                if j % 2:
-                    ax2.semilogx(noise[f"amplitude_err_tfac{j + 1}"], noise['magnitude'], '-', label=f'tfac = {round(tfac, 3)}', alpha=0.8)
-                else:
-                    ax2.semilogx(noise[f"amplitude_err_tfac{j + 1}"], noise['magnitude'], '--', label=f'tfac = {round(tfac, 3)}', alpha=0.8)
+        for j, tfac in enumerate(tfactor):
+            if j % 2:
+                ax2.semilogx(
+                    noise[f"amplitude_err_tfac{j + 1}"], noise['magnitude'], '-', label=f'tfac = {round(tfac, 3)}', alpha=0.8)
+            else:
+                ax2.semilogx(
+                    noise[f"amplitude_err_tfac{j + 1}"], noise['magnitude'], '--', label=f'tfac = {round(tfac, 3)}', alpha=0.8)
 
-            ax2.axis('off')
-            ax2.legend()
-            fig.suptitle(file.split('_')[2])
-            if savefig:
-                fig.savefig(f"figures/vmag_signal_percent_{config}.png", dpi=600)
+        ax2.axis('off')
+        ax2.legend()
+        fig.suptitle(file.split('_')[2])
+        if savefig:
+            fig.savefig(f"figures/vmag_signal_percent_{config}.png", dpi=600)
