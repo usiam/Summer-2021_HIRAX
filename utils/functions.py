@@ -174,9 +174,9 @@ def calc_flux(so: storage_object, exoplanet=True, exo_speed=0,
     original_xgrid = so.xgrid
 
     # accounts for stellar proper motion
-    stel_spec = shift_spectra(so, xgrid=original_xgrid,
-                              speed=stel_speed, choice='stellar')
-
+    # stel_spec = shift_spectra(so, xgrid=original_xgrid,
+    #                           speed=stel_speed, choice='stellar')
+    stel_spec = so.stel.s
     # accounts for exoplanet motion
     if exoplanet == False:
         depth = [1] * len(original_xgrid)

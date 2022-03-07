@@ -243,6 +243,7 @@ class MakePlots():
                       f"\nThroughput:{self.info.hirax.throughput[0]} VMag:{self.info.var.vmag}")
         ax2.set(ylabel=r'$1-\left(\frac{R_{p}}{R_{s}}\right)^{2}$')
         plt.tight_layout()
+        plt.show()
         if savefig:
             fig.savefig(
                 f'figures/hirax_telluric_exoplanet_OH.png', dpi=600)

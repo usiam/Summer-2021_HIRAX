@@ -158,17 +158,6 @@ class fill_data():
 
         so.stel.v = self.x
 
-        # checking range of speeds
-        # so.stel.speed = np.arange(
-        #     so.var.min_stel_speed, so.var.max_stel_speed + 50, 50) * 10 ** 3
-
-        # account for stellar speed and barycentric speed
-        # print(so.var.stel_speed)
-        # print(so.var.stel_speed -
-        #       so.var.barycentric_speed)
-        # so.stel.speed = (so.var.stel_speed +
-        #                  so.var.barycentric_speed) * 10 ** 3
-
         so.stel.units = 'photons/s/m2/nm'  # stellar spec is in photons/s/m2/nm
 
     def telluric(self, so):
